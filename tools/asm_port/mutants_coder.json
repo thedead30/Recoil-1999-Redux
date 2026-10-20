@@ -1,0 +1,276 @@
+{
+ "VMethod_RetNop4": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "ret\\s+0x4",
+   "replacement": "ret 0x0",
+   "reason": "Changes the stack pointer adjustment on return, causing stack imbalance and likely crash or incorrect behavior in caller"
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "ret\\s+0x4",
+   "replacement": "ret 0x0",
+   "reason": "Changes the stack pointer adjustment on return, causing stack imbalance and likely crash or incorrect behavior in caller"
+  }
+ ],
+ "AiList_ResetNonIdle": [
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "jnz L_401c52",
+   "replacement": "jz L_401c52",
+   "reason": "Invert the conditional jump after `test eax, eax` \u2014 this flips the early-exit condition when g_Data_004da000+0x196ac is zero vs non-zero, altering control flow significantly."
+  },
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "jnz L_401c52",
+   "replacement": "jz L_401c52",
+   "reason": "Invert the conditional jump after `test eax, eax` \u2014 this flips the logic so the loop is skipped when eax is zero instead of non-zero, changing control flow significantly."
+  }
+ ],
+ "AiVeh_EnterState1": [
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "cmp ecx, 0x1",
+   "replacement": "cmp ecx, 0x2",
+   "reason": "Change the comparison constant from 0x1 to 0x2 \u2014 this alters the behavior of the subsequent `jz L_401cbc`, causing it to branch only when `ecx == 2`, changing whether `mov dword ptr [eax + 0xf84], 0x1"
+  },
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "cmp ecx, 0x1",
+   "replacement": "cmp ecx, 0x2",
+   "reason": "Change the comparison constant from 0x1 to 0x2 \u2014 this alters the behavior of the subsequent `jz L_401cbc`, causing it to branch only when `ecx == 2`, changing whether the `mov dword ptr [eax + 0xf84],"
+  }
+ ],
+ "AiNet_ResetPlayerVehicles": [
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "mov esi, dword ptr \\[esi\\]",
+   "replacement": "mov esi, dword ptr [esi + 0x4]",
+   "reason": "Change the list traversal offset from 0 (next pointer) to 0x4 (skipping the first field), causing the loop to process wrong or invalid vehicle entries, likely leading to crashes or incorrect behavior."
+  },
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "mov esi, dword ptr \\[esi\\]",
+   "replacement": "mov esi, dword ptr [esi + 0x4]",
+   "reason": "Change the list traversal offset from 0 (next pointer) to 0x4 (skipping the first field), causing the loop to process wrong or invalid vehicle entries, likely crashing or skipping all entries."
+  }
+ ],
+ "NetEdge_Init": [
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "jnz\\s+L_4036a5",
+   "replacement": "jz L_4036a5",
+   "reason": "Inverting the conditional jump changes control flow: the block after the jump (which computes and stores a normalized vector) will now execute only when the comparison *equals* zero, flipping the logi"
+  },
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "test\\s+AH,\\s+0x41",
+   "replacement": "test AH, 0x01",
+   "reason": "Reducing the mask from 0x41 (bits 0 and 6) to 0x01 (bit 0 only) changes which FPU status flags are checked; specifically, it ignores the C0 flag (bit 6), altering the outcome of the conditional jump a"
+  }
+ ],
+ "NetGraph_LinkVehiclesOnSamePath": [
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "jz L_4037b4",
+   "replacement": "jnz L_4037b4",
+   "reason": "Invert the first conditional jump after `test edx, edx`; this flips the early-exit condition, causing the function to skip the main loop when `g_Data_004da000+0x19a7c` is non-zero instead of when it's"
+  },
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "cmp dword ptr \\[eax \\+ 0xc\\], eax",
+   "replacement": "cmp dword ptr [eax + 0xc], 0",
+   "reason": "Change the comparison operand from `eax` to `0`; this alters the zero-flag outcome, causing the subsequent `jnz L_403796` to behave differently \u2014 it will now jump when `[eax+0xc]` is non-zero instead "
+  }
+ ],
+ "Widget_ReturnTrue": [
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "mov\\s+AL,\\s+0x1",
+   "replacement": "mov AL, 0x0",
+   "reason": "Changes return value from 1 to 0, which a test expecting true/nonzero should catch"
+  },
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "mov\\s+AL,\\s+0x1",
+   "replacement": "mov AL, 0x0",
+   "reason": "Changes return value from 1 to 0, which a test expecting true should catch"
+  }
+ ],
+ "Cheat_ClearInfiniteLives": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "jz L_406d12",
+   "replacement": "jnz L_406d12",
+   "reason": "Inverting the conditional jump changes control flow: the block that clears the lives counter will now execute only when eax is non-zero (instead of zero), inverting the intended logic."
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "cmp dword ptr \\[eax \\+ 0xf38\\], 0x75bcd15",
+   "replacement": "cmp dword ptr [eax + 0xf38], 0x75bcd14",
+   "reason": "Changing the compared constant by 1 makes the equality check fail for the original value, preventing the store of 0x0 and leaving the infinite lives value intact."
+  }
+ ],
+ "Widget_EmptyVirtual": [
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "ret\\s+0x4",
+   "replacement": "ret 0x0",
+   "reason": "Changes stack pointer adjustment on return, causing caller to read garbage from stack"
+  },
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "ret\\s+0x4",
+   "replacement": "ret 0x0",
+   "reason": "Changes stack pointer adjustment on return, causing caller to read garbage or crash due to misaligned stack"
+  }
+ ],
+ "Settings_ApplySoundVolume": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "fstp\\s+dword\\s+ptr\\s+\\[eax\\]",
+   "replacement": "fstp st(0)",
+   "reason": "Drops the store to g_SettingsBlock_004e5d00+0x44, so volume setting has no effect"
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "ret\\s+0x4",
+   "replacement": "ret",
+   "reason": "Fails to pop the 4-byte argument from the stack, causing stack imbalance and likely crash or incorrect return address"
+  }
+ ],
+ "PtrVector_ClearEnd": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "cmp\\s+esi,\\s+esi",
+   "replacement": "cmp esi, 0",
+   "reason": "Inverts the conditional behavior of the following jz: instead of always jumping (since cmp esi, esi sets ZF=1), it will only jump if esi is zero, changing the function's logic for non-zero esi values."
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "jnz\\s+L_40bdcf",
+   "replacement": "jz L_40bdcf",
+   "reason": "Inverts the loop termination condition: the loop will now continue while eax == esi (instead of while eax != esi), causing undefined behavior or infinite loop depending on input."
+  }
+ ],
+ "Stub_NoOp_TwoStackArgs": [
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "ret\\s+0x8",
+   "replacement": "ret 0x4",
+   "reason": "Changes stack cleanup from 8 bytes to 4 bytes, causing stack imbalance and likely crash or incorrect behavior on return."
+  },
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "ret\\s+0x8",
+   "replacement": "ret",
+   "reason": "Removes stack cleanup entirely, leaving 8 bytes of arguments on the stack, which corrupts the caller's stack frame."
+  }
+ ],
+ "TextWidget_SetFontHandle": [
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "mov\\s+dword\\s+ptr\\s+\\[ecx\\s*\\+\\s*0x154\\],\\s+eax",
+   "replacement": "mov dword ptr [ecx + 0x150], eax",
+   "reason": "Change memory offset from 0x154 to 0x150 to corrupt a different field in the TextWidget structure"
+  },
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "ret\\s+0x4",
+   "replacement": "ret",
+   "reason": "Drop stack cleanup on return, causing caller to misalign stack or read garbage on next call"
+  }
+ ],
+ "WidgetContainer_SetField4": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "mov\\s+dword\\s+ptr\\s+\\[ecx\\s*\\+\\s*0x4\\],\\s*eax",
+   "replacement": "mov dword ptr [ecx + 0x8], eax",
+   "reason": "Changes the store offset from 0x4 to 0x8, corrupting the wrong field in the WidgetContainer object"
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "ret\\s+0x4",
+   "replacement": "ret",
+   "reason": "Removes stack cleanup, leaving 4 bytes on the stack and breaking caller stack alignment"
+  }
+ ],
+ "HudItem_NopOnSub": [
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "jmp\\s+Hud_Nop",
+   "replacement": "jnz\\s+Hud_Nop",
+   "reason": "Invert unconditional jump to conditional (jnz), changing control flow when zero flag is set"
+  },
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "jmp\\s+Hud_Nop",
+   "replacement": "jnz\\s+Hud_Nop",
+   "reason": "Invert unconditional jump to conditional (JMP\u2192JNZ), altering control flow based on ZF flag set by prior instructions"
+  }
+ ],
+ "HudTimer_SetTime": [
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "fld dword ptr \\[esp \\+ 0x4\\]",
+   "replacement": "fld dword ptr [esp + 0x8]",
+   "reason": "Changes the source operand from the first to the second argument (stack offset +0x8 instead of +0x4), altering the value loaded into the FPU stack"
+  },
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "fstp dword ptr \\[eax \\+ 0x2a4\\]",
+   "replacement": "fstp dword ptr [eax + 0x2a8]",
+   "reason": "Changes the destination store offset by +4 bytes, writing the result to an adjacent memory location instead of the intended one"
+  }
+ ],
+ "HudLabels_Nop3": [
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "jmp\\s+Hud_Nop",
+   "replacement": "je Hud_Nop",
+   "reason": "Invert conditional jump behavior: original always jumps, mutant only jumps if zero flag is set, altering control flow"
+  },
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "jmp\\s+Hud_Nop",
+   "replacement": "je Hud_Nop",
+   "reason": "Invert conditional jump behavior: original always jumps, mutant only jumps if zero flag is set, changing control flow."
+  }
+ ],
+ "VMethod_ReturnTrue_00412bd0": [
+  {
+   "file": "05_remake/src/Battlesport/hud_hud.cpp",
+   "regex": "mov\\s+eax,\\s+0x1",
+   "replacement": "mov eax, 0x0",
+   "reason": "Changes return value from 1 (true) to 0 (false), which a test expecting a true return should catch."
+  },
+  {
+   "file": "05_remake/src/Battlesport/hud_hud.cpp",
+   "regex": "ret\\s+0x4",
+   "replacement": "ret",
+   "reason": "Removes stack cleanup, causing stack imbalance and likely crash or incorrect behavior on caller side."
+  }
+ ],
+ "ScoreRows_QuickSort": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "jle\\s+L_414920",
+   "replacement": "jg L_414920",
+   "reason": "Inverts the conditional jump \u2014 the block that was executed when edx <= 0x10 now executes only when edx > 0x10, flipping the control flow and likely causing incorrect behavior in edge cases."
+  }
+ ],
+ "VMethod_ReturnFalse4_00414b50": [
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "xor\\s+eax,\\s+eax",
+   "replacement": "mov eax, 1",
+   "reason": "Changes return value from 0 (false) to 1 (true), altering function behavior"
+  },
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "xor\\s+eax,\\s+eax",
+   "replacement": "mov eax, 1",
+   "reason": "Changes return value from 0 (false) to 1 (true), altering function semantics"
+  }
+ ]
+}

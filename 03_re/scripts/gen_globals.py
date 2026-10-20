@@ -1,0 +1,145 @@
+"""gen_globals.py - build the per-subsystem globals tables (TODO item E3).
+
+Input: 03_re/ledger/global_refs.csv (from ghidra_GlobRefs.java: global, func, kind R/W/A),
+the ledger (names), subsystems.csv (function -> subsystem) and the spec text (meanings).
+
+Only globals with at least one WRITE are listed (mutable state). A global is owned by the
+subsystem that writes it most; ties go to the alphabetically first. The meaning column is the
+first spec line that names the address, else the first ledger note that does; it is a pointer
+to the evidence, condensed, not a new claim. Rows with no mention are marked "(no mention)".
+
+Consecutive written globals (gap <= 0x10) with identical writer sets are folded into one block
+row. A block with no direct mention borrows the nearest mention inside it or up to 0x40 below
+its start, labelled "(block, via ADDR)": a proximity pointer, weaker than a direct mention.
+Hand annotations in 03_re/ledger/global_notes.csv (global, meaning, write_instruction) take
+precedence; each was read from the Ghidra listing at the cited write instruction.
+
+Output: 04_spec/globals/<subsystem>.md and 04_spec/globals/README.md (counts).
+usage: python 03_re/scripts/gen_globals.py
+"""
+import collections
+import csv
+import glob
+import io
+import os
+import re
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+OUT = os.path.join(ROOT, "04_spec", "globals")
+
+
+def main():
+    refs = collections.defaultdict(lambda: {"W": set(), "R": set(), "A": set()})
+    for r in csv.DictReader(open(os.path.join(ROOT, "03_re", "ledger", "global_refs.csv"))):
+        refs[r["global"]][r["kind"]].add(r["func"])
+    led = {r["address"].lower(): r for r in csv.DictReader(
+        open(os.path.join(ROOT, "03_re", "ledger", "functions.csv"), encoding="utf-8"))}
+    sub = {}
+    for r in csv.DictReader(open(os.path.join(ROOT, "03_re", "ledger", "subsystems.csv"), encoding="utf-8")):
+        sub.setdefault(r["address"].lower(), r["subsystem"])
+
+    spec_lines = []
+    for p in sorted(glob.glob(os.path.join(ROOT, "04_spec", "systems", "*.md"))):
+        for ln in io.open(p, encoding="utf-8"):
+            spec_lines.append((os.path.basename(p), ln.strip()))
+    spec_idx = collections.defaultdict(list)
+    for f, ln in spec_lines:
+        for a in set(re.findall(r"0x00[0-9a-f]{6}", ln.lower())):
+            spec_idx[a].append((f, ln))
+    note_idx = collections.defaultdict(list)
+    for a, r in led.items():
+        for g in set(re.findall(r"0x00[0-9a-f]{6}", (r["spec_ref"] + " " + r["notes"]).lower())):
+            note_idx[g].append(r["ghidra_name"])
+
+    def nm(f):
+        return led.get(f, {}).get("ghidra_name", f)
+
+    def meaning(g):
+        if spec_idx.get(g):
+            f, ln = spec_idx[g][0]
+            ln = re.sub(r"\s+", " ", ln).replace("|", "/")
+            return "%s: %s" % (f, ln[:140] + ("..." if len(ln) > 140 else ""))
+        if note_idx.get(g):
+            return "ledger: " + ", ".join(sorted(set(note_idx[g]))[:3])
+        return "(no mention)"
+
+    # fold runs: consecutive written globals (gap <= 0x10) with the same writer set -> one block
+    written = sorted((g for g, k in refs.items() if k["W"]), key=lambda x: int(x, 16))
+    blocks = []
+    for g in written:
+        if blocks:
+            b = blocks[-1]
+            if int(g, 16) - int(b[-1], 16) <= 0x10 and refs[g]["W"] == refs[b[0]]["W"]:
+                b.append(g)
+                continue
+        blocks.append([g])
+
+    notes = {}
+    np_ = os.path.join(ROOT, "03_re", "ledger", "global_notes.csv")
+    if os.path.exists(np_):
+        for r in csv.DictReader(open(np_, encoding="utf-8")):
+            notes[r["global"].lower()] = "annotated (write at `%s`): %s" % (r["write_instruction"], r["meaning"])
+
+    def block_meaning(b):
+        for g in b:
+            if g in notes:
+                return notes[g]
+        m = meaning(b[0])
+        if m != "(no mention)":
+            return m
+        lo, hi = int(b[0], 16), int(b[-1], 16)
+        for a in list(spec_idx) + list(note_idx):
+            v = int(a, 16)
+            if lo - 0x40 <= v <= hi and (v >= lo or len(b) > 1):
+                mm = meaning(a)
+                if mm != "(no mention)":
+                    return "(block, via `%s`) %s" % (a, mm)
+        return "(no mention)"
+
+    owned = collections.defaultdict(list)
+    for b in blocks:
+        ws = set().union(*(refs[g]["W"] for g in b))
+        c = collections.Counter(sub.get(f, "(none)") for f in ws)
+        top = sorted(c.items(), key=lambda x: (-x[1], x[0]))[0][0]
+        owned[top].append(b)
+
+    os.makedirs(OUT, exist_ok=True)
+    for f in glob.glob(os.path.join(OUT, "*.md")):
+        os.remove(f)
+    summary = []
+    for s in sorted(owned):
+        gl = sorted(owned[s], key=lambda b: int(b[0], 16))
+        nomention = 0
+        lines = ["# Globals owned by `%s`" % s, "",
+                 "Generated by `03_re/scripts/gen_globals.py` from Ghidra data references "
+                 "(`03_re/ledger/global_refs.csv`). Owner = the subsystem with most writers. "
+                 "Meaning = first spec line (else ledger note) naming the address - a pointer to "
+                 "the evidence, not a new claim.", "",
+                 "| global | meaning (condensed) | writers | readers (other subsystems marked) |",
+                 "|---|---|---|---|"]
+        for b in gl:
+            g = b[0] if len(b) == 1 else "%s..%s (%d)" % (b[0], b[-1], len(b))
+            k = {"W": set().union(*(refs[x]["W"] for x in b)), "R": set().union(*(refs[x]["R"] for x in b)),
+                 "A": set().union(*(refs[x]["A"] for x in b))}
+            m = block_meaning(b)
+            nomention += m == "(no mention)"
+            w = ", ".join(sorted(nm(f) for f in k["W"])[:4]) + (" +%d" % (len(k["W"]) - 4) if len(k["W"]) > 4 else "")
+            rd = sorted(k["R"] | k["A"])
+            rtxt = ", ".join((nm(f) + ("*" if sub.get(f) != s else "")) for f in rd[:4]) + (
+                " +%d" % (len(rd) - 4) if len(rd) > 4 else "")
+            lines.append("| `%s` | %s | %s | %s |" % (g, m, w, rtxt or "-"))
+        io.open(os.path.join(OUT, s.replace("(", "").replace(")", "") + ".md"), "w", encoding="utf-8",
+                newline="").write("\n".join(lines) + "\n")
+        summary.append((s, len(gl), nomention))
+    tot = sum(x[1] for x in summary)
+    nm_tot = sum(x[2] for x in summary)
+    readme = ["# Globals tables (TODO item E3)", "",
+              "%d rows (%d written globals; consecutive fields with the same writers folded into one block) across %d owners; %d rows have no spec or ledger mention yet." % (tot, sum(len(b) for s in owned for b in owned[s]), len(summary), nm_tot),
+              "", "| owner | rows | no mention |", "|---|---|---|"]
+    readme += ["| [`%s`](%s.md) | %d | %d |" % (s, s.replace("(", "").replace(")", ""), n, z) for s, n, z in summary]
+    io.open(os.path.join(OUT, "README.md"), "w", encoding="utf-8", newline="").write("\n".join(readme) + "\n")
+    print(tot, "globals,", len(summary), "owners,", nm_tot, "no mention")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,269 @@
+{
+ "VMethod_RetNop4": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "ret\\s+0x4",
+   "replacement": "ret 0x8",
+   "reason": "Changes the stack cleanup amount from 4 to 8 bytes, corrupting the caller's stack frame."
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "ret\\s+0x4",
+   "replacement": "ret 0x0",
+   "reason": "Removes the stack cleanup entirely, leaving 4 bytes of garbage on the stack and misaligning subsequent calls."
+  }
+ ],
+ "AiList_ResetNonIdle": [
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "jnz L_401c52",
+   "replacement": "je L_401c52",
+   "reason": "Inverts the early exit condition for when g_Data is non-zero, causing the function to process the list when it should skip it."
+  },
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "mov dword ptr \\[ecx \\+ 0xfdc\\], ebx",
+   "replacement": "mov dword ptr [ecx + 0xfdc], 0x0",
+   "reason": "Changes the value stored in the state flag from 1 to 0, altering the object's state transition behavior."
+  }
+ ],
+ "AiVeh_EnterState1": [
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "sub ecx, 0x2",
+   "replacement": "sub ecx, 0x3",
+   "reason": "Changes the compared constant in the vector count check, altering the condition for entering the vector normalization block and changing the resulting memory writes."
+  },
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "sub ecx, 0x2",
+   "replacement": "sub ecx, 0x1",
+   "reason": "Changes the compared constant in the vector count check; alters the condition for entering the vector normalization block, leading to incorrect behavior when the count is exactly 2."
+  }
+ ],
+ "AiNet_ResetPlayerVehicles": [
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "jz L_402f4d",
+   "replacement": "jnz L_402f4d",
+   "reason": "Inverts the initial null check for the linked list head, causing the function to skip processing when a valid list exists and attempt to process an empty list."
+  },
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "mov dword ptr \\[g_Data_004da000 \\+ 0x196ac\\], ebx",
+   "replacement": "nop; nop; nop; nop; nop; nop; nop; nop",
+   "reason": "Drops the final store to memory, preventing the state flag from being updated after vehicle reset."
+  }
+ ],
+ "NetEdge_Init": [
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "test AH, 0x41",
+   "replacement": "test AH, 0x45",
+   "reason": "Changes the flag mask used to check for NaN or unordered results from fcomp. This alters the control flow logic for handling invalid floating-point comparisons."
+  },
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "push 0xc2340000",
+   "replacement": "push 0x42340000",
+   "reason": "Changes the rotation angle constant from -90 degrees (0xc2340000) to +90 degrees (0x42340000). This results in a different vector orientation after the second Vec3_RotateY call."
+  }
+ ],
+ "NetGraph_LinkVehiclesOnSamePath": [
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "jz L_403796",
+   "replacement": "jnz L_403796",
+   "reason": "Inverts the conditional jump after comparing path IDs, causing vehicles on the same path to be skipped instead of linked."
+  },
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "mov dword ptr \\[eax \\+ 0xc\\], ecx",
+   "replacement": "mov dword ptr [eax + 0x10], ecx",
+   "reason": "Changes the memory offset for updating the next pointer, corrupting adjacent data instead of the linked list structure."
+  }
+ ],
+ "Widget_ReturnTrue": [
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "mov AL, 0x1",
+   "replacement": "mov AL, 0x0",
+   "reason": "Changes the return value from true (1) to false (0)."
+  },
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "ret 0x8",
+   "replacement": "ret 0x4",
+   "reason": "Changes the stack cleanup size, causing a stack imbalance for this __fastcall function."
+  }
+ ],
+ "Cheat_ClearInfiniteLives": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "jz L_406d12",
+   "replacement": "jnz L_406d12",
+   "reason": "Inverts the conditional jump, causing the function to skip clearing lives when the pointer is null and attempt to clear them when it is not."
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "cmp dword ptr \\[eax \\+ 0xf38\\], 0x75bcd15",
+   "replacement": "cmp dword ptr [eax + 0xf38], 0x75bcd16",
+   "reason": "Changes the compared constant, preventing the function from recognizing the specific infinite lives value and failing to clear it."
+  }
+ ],
+ "Widget_EmptyVirtual": [
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "ret\\s+0x4",
+   "replacement": "ret 0x8",
+   "reason": "Changes the stack cleanup amount from 16 bytes to 32 bytes, corrupting the caller's stack frame."
+  },
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "ret\\s+0x4",
+   "replacement": "ret 0x0",
+   "reason": "Removes the stack cleanup entirely, leaving 16 bytes of garbage on the stack and causing subsequent calls to fail."
+  }
+ ],
+ "Settings_ApplySoundVolume": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "fstp dword ptr \\[eax\\]",
+   "replacement": "nop",
+   "reason": "Drops the store of the volume value to memory, causing Sound_SetMasterVolume to read stale data."
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "ret 0x4",
+   "replacement": "ret 0x8",
+   "reason": "Changes the stack cleanup amount, corrupting the caller's stack frame."
+  }
+ ],
+ "PtrVector_ClearEnd": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "jnz L_40bdcf",
+   "replacement": "jz L_40bdcf",
+   "reason": "Inverts the loop termination condition, causing an infinite loop or immediate exit depending on initial state."
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "mov dword ptr \\[edx\\], edi",
+   "replacement": "nop",
+   "reason": "Drops the store operation that copies data from the source vector to the destination buffer, resulting in uninitialized or stale data in the output."
+  }
+ ],
+ "Stub_NoOp_TwoStackArgs": [
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "ret\\s+0x8",
+   "replacement": "ret 0x4",
+   "reason": "Change the stack cleanup amount from 8 bytes to 4 bytes, causing a stack imbalance that tests should detect."
+  },
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "ret\\s+0x8",
+   "replacement": "ret 0xC",
+   "reason": "Change the stack cleanup amount from 8 bytes to 12 bytes, causing a different stack imbalance that tests should detect."
+  }
+ ],
+ "TextWidget_SetFontHandle": [
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "mov\\s+dword\\s+ptr\\s+\\[ecx\\s*\\+\\s*0x154\\]",
+   "replacement": "mov dword ptr [ecx + 0x158]",
+   "reason": "Change memory offset to write to a different field"
+  },
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "ret\\s+0x4",
+   "replacement": "ret 0x0",
+   "reason": "Drop stack cleanup for the passed argument, corrupting caller stack"
+  }
+ ],
+ "WidgetContainer_SetField4": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "mov\\s+dword\\s+ptr\\s+\\[ecx\\s*\\+\\s*0x4\\]",
+   "replacement": "mov dword ptr [ecx + 0x8]",
+   "reason": "Change memory offset to write to the wrong field"
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "ret\\s+0x4",
+   "replacement": "ret 0x0",
+   "reason": "Drop stack cleanup causing stack corruption"
+  }
+ ],
+ "HudItem_NopOnSub": [
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "lea\\s+ecx,\\s+\\[eax\\s*\\+\\s*0x1c\\]",
+   "replacement": "lea ecx, [eax + 0x1d]",
+   "reason": "Change memory offset to alter the pointer passed to Hud_Nop"
+  },
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "jmp\\s+Hud_Nop",
+   "replacement": "ret",
+   "reason": "Drop the jump to return immediately instead of calling Hud_Nop"
+  }
+ ],
+ "HudTimer_SetTime": [],
+ "HudLabels_Nop3": [
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "mov ecx, offset g_Data_004da000 \\+ 0xc32c",
+   "replacement": "mov ecx, offset g_Data_004da000 + 0xc32d",
+   "reason": "Change memory offset to alter the data pointer passed to Hud_Nop"
+  },
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "jmp Hud_Nop",
+   "replacement": "call Hud_Nop",
+   "reason": "Change jump to call to alter control flow and stack behavior"
+  }
+ ],
+ "VMethod_ReturnTrue_00412bd0": [
+  {
+   "file": "05_remake/src/Battlesport/hud_hud.cpp",
+   "regex": "mov\\s+eax,\\s+0x1",
+   "replacement": "mov eax, 0x0",
+   "reason": "Change the returned constant from true (1) to false (0)."
+  },
+  {
+   "file": "05_remake/src/Battlesport/hud_hud.cpp",
+   "regex": "ret\\s+0x4",
+   "replacement": "ret 0x8",
+   "reason": "Change the stack cleanup amount, causing a stack imbalance."
+  }
+ ],
+ "ScoreRows_QuickSort": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "jle L_414920",
+   "replacement": "jl L_414920",
+   "reason": "Inverts the conditional jump logic for small arrays (size <= 16). Changing 'jle' to 'jl' causes the code to enter the sorting loop when the array size is exactly 16, which should be handled by the bas"
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "jle L_414920",
+   "replacement": "jl L_414920",
+   "reason": "Inverts the conditional jump logic for small arrays (size <= 16). Changing 'jle' to 'jl' causes the code to enter the sorting loop when the array size is exactly 16, which should be handled by the bas"
+  }
+ ],
+ "VMethod_ReturnFalse4_00414b50": [
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "xor\\s+eax,\\s+eax",
+   "replacement": "mov\\s+eax,\\s+1",
+   "reason": "Changes the return value from false (0) to true (1)."
+  },
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "ret\\s+0x4",
+   "replacement": "ret\\s+0x8",
+   "reason": "Changes the stack cleanup amount, causing a stack imbalance."
+  }
+ ]
+}

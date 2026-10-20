@@ -1,0 +1,19 @@
+site,function,name,form
+0x004a4d6d,0x004a4d10,Sound_StreamCue_PickWeightedRandomVariant,call
+0x004016df,0x004016a0,NetNode_PickRandomLink,call
+0x00402696,0x004024a0,AiVeh_LeadTargetIntercept,call
+0x004aeea9,0x004aee40,Weapon_ActivateProjectile,call
+0x004bdee8,0x004bdee0,ScreenParticle_Respawn,cached in EBX (3 calls: 0x004bdf05/0x004bdf1e/0x004bdf64)
+0x004ae874,0x004ae660,Weapon_FireProjectile,call
+0x004b069f,0x004b0660,Weapon_ApplyRadiusEffectA,call
+0x0046a69d,0x0046a690,Material_CreateRandomColour,cached in ESI (3 calls: 0x0046a6a3/0x0046a6b7/0x0046a6cb)
+0x004b0758,0x004b0710,Weapon_ApplyRadiusEffectB,call
+0x004b0ff3,0x004b0fd0,Weapon_PlayRandomSoundA,call
+0x0048d377,0x0048d340,Raster_InitNoiseAndBackBuffer,cached in EBP (loop 0x0048d37d)
+0x0045e173,0x0045e100,Anim_ResetGlobals,"cached in EDI (loop 0x0045e18b, 200-entry table)"
+0x0048d9ba,0x0048d910,Screen_RandomDissolve,call (loop)
+0x004afdcf,0x004af060,Weapon_ProjectileUpdateTick,call (loop)
+0x004afdf0,0x004af060,Weapon_ProjectileUpdateTick,call
+0x004affca,0x004af060,Weapon_ProjectileUpdateTick,call
+0x004affec,0x004af060,Weapon_ProjectileUpdateTick,call
+0x004b1053,0x004b1030,Weapon_PlayRandomSoundB,call

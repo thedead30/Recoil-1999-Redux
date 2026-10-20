@@ -1,0 +1,162 @@
+command,string_va,match,args_in_order,calls_in_order
+AddChild,0x004e5948,strncmp 8,str,NodeRegistry_LookupByName Script_Fail gwNodeAttachChild [conditional]
+AddEnhancerImage,0x004e58dc,strncmp 16,str,TextureManager_FindOrAddSlot
+AnimSetZBDFile,0x004e58cc,strncmp 14,str,AnimData_SetZbdName
+AnimSetDebugFrame,0x004e58b8,strncmp 17,-,SetGlobal_004df670
+CameraRotate,0x004e58a8,strncmp 12,float float float,FUN_00449ea0
+CameraGetTranslate,0x004e5894,strcmp,-,Camera_GetWorldPosition Script_CallErrorHook [conditional]
+CameraSetActive,0x004e5868,strncmp 15,bool,gwNodeSetActive
+CameraSetDynamicLOD,0x004e5854,strncmp 19,float,Render_SetFrameRateCap
+CameraSetFOV,0x004e5844,strncmp 12,float float,Camera_SetFOV
+CameraSetHorizonXZ,0x004e5830,strncmp 18,str,NodeRegistry_LookupByName FUN_0044a980
+CameraSetHorizon,0x004e581c,strncmp 16,str,NodeRegistry_LookupByName FUN_0044a910
+CameraSetLODMultiplier,0x004e5804,strncmp 22,float,FUN_0044a870
+CameraSetNearFarClip,0x004e57ec,strncmp 20,float float,FUN_0044a2f0
+CameraSetNearClip,0x004e57d8,strcmp,float,FUN_0044a380 FUN_0044a2f0
+CameraSetFarClip,0x004e57c4,strcmp,float,FUN_0044a380 FUN_0044a2f0
+CameraSetObjectHSETest,0x004e57ac,strncmp 22,bool,FUN_00449dc0
+CameraSetWindow,0x004e579c,strncmp 15,str,NodeRegistry_LookupByName FUN_00449e90
+CameraSetWorld,0x004e578c,strncmp 14,str,NodeRegistry_LookupByName FUN_00449dd0
+CameraTranslate,0x004e577c,strncmp 15,float float float,FUN_0044a0f0
+CountCameraNodes,0x004e5768,strncmp 14,-,NodeList_Count printf
+CountUsedNodes,0x004e5738,strncmp 14,-,NodeList_Count printf
+CycleTextureSetLooping,0x004e5700,strncmp 22,bool,ModelInstance_Call_00481220
+CycleTextureSetMap,0x004e56ec,strncmp 18,str,TextureManager_FindOrAddSlot ModelInstance_Call_00481100
+CycleTextureSetOn,0x004e56d8,strncmp 17,int,FUN_00404e80 gwNodeGetModel ModelInstance_Call481050 [conditional]
+CycleTextureSetSpeed,0x004e55dc,strncmp 20,float,ModelInstance_Call_00481260
+ClearScreenBuffer,0x004e55c8,strncmp 17,bool,zVideo_SetD3DDeviceCreated
+DeleteChild,0x004e55bc,strncmp 11,str,Node_FindChildByNameRecursive gwNodeDetachChild CONCAT44 FUN_00404e80 [conditional]
+DeleteFile,0x004e5584,strncmp 10,str,DeleteFileA
+DeleteTree,0x004e5578,strncmp 10,str,NodeRegistry_LookupByName gwNode_DestroyTree [conditional]
+DisplayOrigin,0x004e5540,strncmp 13,int int,DisplayClass_SetOrigin
+DisplayResolution,0x004e552c,strncmp 17,int int,DisplayClass_SetSize
+DisplaySetClearColor,0x004e5514,strncmp 20,float float float,Display_SetColour
+FindNode,0x004e54f8,strncmp 8,str,NodeRegistry_LookupByName Script_Fail [conditional]
+FindSubNode,0x004e54d8,strncmp 11,str,Node_FindChildByNameRecursive Script_Fail [conditional]
+FreeNode,0x004e54b4,strncmp 8,str,NodeRegistry_LookupByName switch thunk_FUN_00447b60 World_Destroy printf [conditional]
+GameZReadZBDFile,0x004e5464,strncmp 16,str,GameZ_LoadZbd Script_Fail [conditional]
+GameZWriteZBDFile,0x004e5440,strncmp 17,str,NodeList_RunClientLists NodeList_FlushAll GameZ_SaveZbd
+GetBFETolerance,0x004e5430,strncmp 15,-,Geom_GetBFETolerance Script_CallErrorHook
+LensFlareTexture,0x004e5408,strncmp 16,int str,TextureManager_FindOrAddSlot LensFlare_SetTexture
+LightNew,0x004e53fc,strncmp 8,-,Light_Create
+LightSetActive,0x004e53ec,strncmp 14,bool,gwNodeSetActive
+LightSetAmbient,0x004e53dc,strncmp 15,float,Light_SetFieldA8
+LightSetColor,0x004e53cc,strncmp 13,float float float,Light_SetColor
+LightSetDiffuse,0x004e53bc,strncmp 15,float,Light_SetFieldA4
+LightSetDirectedSource,0x004e53a4,strncmp 22,-,Light_SetModeBC
+LightSetDirectional,0x004e5390,strncmp 19,bool,Light_SetFieldB8
+LightSetOrientation,0x004e537c,strncmp 19,float float float,Light_SetVec08
+LightSetPointSource,0x004e5368,strncmp 19,-,Light_SetModeC0
+LightSetRanges,0x004e5358,strncmp 14,float float,Light_SetFalloffRange
+LightSetSaturated,0x004e5344,strncmp 19,bool,Script_Fail Light_SetFieldC4 [conditional]
+LightSetTranslate,0x004e5314,strncmp 17,float float float,Light_SetVec14
+LoadSoils,0x004e5308,strncmp 9,str,MaterialName_LoadFromConfig
+LODAddChild,0x004e52fc,strncmp 11,str,NodeRegistry_LookupByName thunk_FUN_004484d0
+LODSetRange,0x004e52f0,strncmp 11,float float,
+MatlFaceColor,0x004e52e0,strncmp 13,float float float,Pixel_PackRGB
+MatlNew,0x004e52d8,strncmp 7,-,Material_Init
+MatlTexture,0x004e52cc,strncmp 11,str,TextureManager_FindSlotByName [conditional]
+ModelNew,0x004e52c0,strncmp 8,str str,Object3D_Create gwNodeSetName Model_Alloc gwNodeSetModel
+Facade,0x004e52b8,strncmp 6,-,SetDword0_FromEDX
+ModelPolygonBegin,0x004e52a4,strncmp 17,-,
+ModelPolygonEnd,0x004e5294,strncmp 15,-,Material_FindOrCreate FUN_00476320 Model_Call483650_Arg2Zero
+ModelPolygonUV,0x004e5284,strncmp 14,float float,
+ModelPolygonVertex,0x004e5270,strncmp 18,float float float,
+NewCamera,0x004e5264,strncmp 9,str,FUN_00449be0 gwNodeSetName
+NewDisplay,0x004e5258,strncmp 10,-,DisplayClass_Create
+NewLOD,0x004e5250,strncmp 6,-,NodeType6_Create
+NewNode,0x004e5248,strncmp 7,-,FUN_004478c0
+NewObject3D,0x004e523c,strncmp 11,-,Object3D_Create
+NewSEQ,0x004e5234,strncmp 6,str,Seq_Create gwNodeSetName
+NewWindow,0x004e5228,strncmp 9,-,WindowClass_Create
+NewWorld,0x004e521c,strncmp 8,-,World_Create
+NodeSetActive,0x004e520c,strncmp 13,bool,gwNodeSetActive
+NodeSetDescription,0x004e51f8,strncmp 18,str,gwNodeSetName
+NodeSetCanModify,0x004e51e4,strncmp 16,bool,gwNodeSetFlag10000
+NodeSetLighting,0x004e51d4,strncmp 15,bool,ClassNode_ReleaseModelsRecursive
+NodeSetOverwrite,0x004e51c0,strncmp 16,bool,gwNodeSetFlag800000
+Object3DAddChild,0x004e51ac,strncmp 16,str,NodeRegistry_LookupByName Object3D_AttachChild CONCAT44 [conditional]
+Object3DGetTranslate,0x004e5164,strcmp,-,Object3D_GetPosition Script_CallErrorHook [conditional]
+Object3DRegisterTexturesToWorld,0x004e5144,strncmp 31,bool,gwNodeGetModel [conditional]
+Object3DRotate,0x004e5134,strncmp 14,float float float,Object3D_SetRotation
+Object3DScale,0x004e5124,strncmp 13,float float float,Object3D_SetScale
+Object3DSetActionPriority,0x004e5108,strncmp 25,int,gwNodeSetActionList
+Object3DSetActive,0x004e50f4,strncmp 17,bool,gwNodeSetActive
+Object3DSetColor,0x004e50e0,strncmp 16,int,gwNodeGetModel ModelInstance_ResetNonCycleParts
+Object3DSetFacade,0x004e50cc,strncmp 17,-,gwNodeGetModel SetDword0_FromEDX
+Object3DSetOpacityIsSet,0x004e50b4,strncmp 23,int,Object3D_SetFlag2
+Object3DSetOpacity,0x004e50a0,strncmp 18,float,Object3D_SetValue4
+Object3DSetPoints,0x004e508c,strncmp 17,-,gwNodeGetModel SetDword0_FromEDX
+Object3DSetPriority,0x004e5078,strncmp 19,int,gwNodeGetModel ModelInstance_SetAllPartsField4
+Object3DSetScrollAlways,0x004e5060,strncmp 23,bool float float,Script_NodeGetModelIfAny Script_SetNodeTextureScroll CONCAT44 [conditional]
+Object3DSetScroll,0x004e500c,strncmp 17,bool float float,Script_Fail Script_SetNodeTextureScroll Script_NodeGetModelIfAny [conditional]
+Object3DSetShowBackFace,0x004e4fc4,strncmp 23,bool,gwNodeGetModel ModelInstance_SetAllPartsBit8
+Object3DSetTextureWorldBaseCoord,0x004e4f9c,strncmp 38,float float,Render_SetInverseZTolerances
+Object3DSetTextureWorldTexturesP,0x004e4f74,strncmp 37,float float,Render_SetPerspectiveTexDeltas
+Object3DSetMorphVertex,0x004e4f5c,strncmp 22,float,gwNodeGetModel Model_BuildVertexWeightTable
+Object3DTranslate,0x004e4f48,strncmp 17,float float float,Object3D_SetPosition
+PerspectiveTexture,0x004e4f34,strncmp 18,bool,
+PrintNodeCount,0x004e4f24,strncmp 14,str,NodeList_FindNextByName printf
+PrintTree,0x004e4f00,strcmp,-,Script_Fail Script_DumpTree [conditional]
+PrintUsedNodes,0x004e4ee0,strncmp 14,-,NodeList_DebugPrint
+RdrAddPath,0x004e4ed4,strncmp 10,str,SearchPath_InitOrAdd
+RdrSetPath,0x004e4ec8,strncmp 10,str,SearchPath_InitOrReset
+SEQAddChild,0x004e4eb8,strncmp 11,str int float,NodeRegistry_LookupByName Seq_InsertEntry
+SEQNew,0x004e4eb0,strncmp 6,-,
+SEQSetActive,0x004e4ea0,strncmp 12,int,Seq_SetField0
+SEQSetLoop,0x004e4e94,strncmp 10,int,Seq_SetField8
+SEQSetPause,0x004e4e88,strncmp 12,int,Seq_SetFieldC
+SEQSetRepeat,0x004e4e78,strncmp 12,-,
+SetAltitudeSurface,0x004e4e64,strncmp 18,bool,gwNodeSetFlag08
+SetBFETolerance,0x004e4e54,strncmp 15,float,Script_CheckArgs Geom_SetBFETolerance [conditional]
+SetCoplanarTolerance,0x004e4e3c,strncmp 20,float,Model_SetGlobalDouble_004e1388
+SetColinearTolerance,0x004e4e24,strncmp 20,float,Model_SetGlobalDouble_004e1390
+SetGameZNodeArraySize,0x004e4e0c,strncmp 21,int,ClassDb_SetNodeArraySize
+SetMaterialArraySize,0x004e4df4,strncmp 20,int,Material_SetArraySize
+SetModel3DArraySize,0x004e4de0,strncmp 19,int,ModelCache_SetArraySize
+SetIntersectBBOX,0x004e4dcc,strncmp 16,bool,gwNodeSetFlag20
+SetIntersectSurface,0x004e4db8,strncmp 19,bool,gwNodeSetFlag10
+SetLandmark,0x004e4dac,strncmp 11,bool,gwNodeSetFlag80
+SetPaletteName,0x004e4d9c,strncmp 14,str,ZVid_LoadPalette
+SetPaletteShading,0x004e4d88,strncmp 17,bool,Render_SetVertexShading
+SetPerspectiveAdaptiveCorrection,0x004e4d64,strncmp 32,int int float,zRndr_SetPerspectiveSubdivAdaptive
+SetPerspectiveTextureDeltaX,0x004e4d48,strncmp 27,int,zRndr_SetPerspectiveSubdivFixed
+SetInverseZTolerance,0x004e4d30,strncmp 20,float,Render_SetSmallPolygonRejectArea
+SetPerspectiveInverseZTolerance,0x004e4d10,strncmp 20,float,zRndr_SetPerspectiveInverseZTolerance
+SetPerspectiveTextureFarZ,0x004e4cf4,strncmp 25,float,zRndr_SetReciprocalParam_0057de68
+SetProximity,0x004e4ce4,strncmp 12,bool,gwNodeSetFlag40
+SetSmallPolygonRejectArea,0x004e4cc8,strncmp 25,float,Model_SetScaleGlobals
+SetTextureDirectory,0x004e4cb4,strncmp 19,str,TextureManager_AddSearchPaths
+SetVertexShading,0x004e4ca0,strncmp 16,bool,RenderState_SetSecondArrayBlendEnabled
+TextureAdd,0x004e4c94,strncmp 10,str,TextureManager_FindOrAddSlot
+Verbose,0x004e4c8c,strncmp 7,bool,
+WindowAddClearPolygonVertex,0x004e4c4c,strncmp 27,float float float,Script_CheckArgs WindowClass_AddClearPolygonVertex [conditional]
+WindowBuffer,0x004e4c3c,strncmp 15,int,Script_CheckArgs WindowClass_SetField_e4 [conditional]
+WindowCloseClearPolygon,0x004e4c24,strncmp 23,-,WindowClass_CloseClearPolygon
+WindowOrigin,0x004e4c14,strncmp 12,int int,WindowClass_SetOrigin
+WindowResolution,0x004e4c00,strncmp 16,int int,WindowClass_SetSize
+WindowSetClearPolygon,0x004e4be8,strncmp 21,bool,WindowClass_SetClearPolygonActive
+WorldAddLight,0x004e4bd8,strncmp 13,str,NodeRegistry_LookupByName World_AddLight
+WorldExtents,0x004e4bc8,strncmp 12,float float,World_SetExtent
+WorldOrigin,0x004e4bbc,strncmp 11,float float,World_SetOrigin
+WorldPartitionInclusionTolerance,0x004e4b98,strncmp 32,float float,World_SetCellMargins
+WorldPartitionMaxDECFeatureCount,0x004e4b74,strncmp 32,int,World_SetPartitionMax
+WorldPartition,0x004e4b64,strncmp 14,float float,World_BuildGrid
+WorldSetFogAltitude,0x004e4b50,strncmp 19,float float,World_SetParams28
+WorldSetFogColor,0x004e4b3c,strncmp 16,float float float,World_SetParams14
+WorldSetFogDensity,0x004e4b28,strncmp 18,float,World_SetParam30
+WorldSetFogState,0x004e4aa0,strncmp 16,str,Script_CheckArgs [conditional]
+linear,0x004e4a98,strncmp 6,-,World_SetParam10
+exponential,0x004e4a8c,strncmp 11,-,World_SetParam10
+WorldSetVirtualPartition,0x004e4a58,strncmp 24,bool,World_SetRebucket50
+WriteTextureSetType,0x004e4a44,strncmp 19,int,Decal_SetImageIndex
+WriteTextureSetMap,0x004e4a30,strncmp 18,str,TextureManager_FindOrAddSlot Palette_SetName
+Echo,0x004e5504,strncmp 4,-,Script_DumpArgs
+echo,0x004e550c,strncmp 4,-,Script_DumpArgs
+SEQ,0x004e4ec4,strncmp 3,-,(guard only: gates the SEQ* compares in case S)
+VideoSetDither,0x004e4c7c,strcmp,bool,zVideo_SetGlobal_0063213c
+VideoSetWireFrame,0x004e4c68,strcmp,bool,zVideo_SetGlobal_00632138
+WorldSetFogRange,0x004e4b14,strcmp,float float,"Script_CheckArgs(2, type 2, current node) World_SetParams20(near, far)"
+WorldSetFogRangeNear,0x004e4afc,strcmp,float,"Script_CheckArgs(1, type 2) World_GetParams20 World_SetParams20(new near, old far)"
+WorldSetFogRangeFar,0x004e4ae8,strcmp,float,"Script_CheckArgs(1, type 2) World_GetParams20 World_SetParams20(old near, new far)"
+WorldGetFogRange,0x004e4ad4,strcmp,-,"Script_CheckArgs(EBX, type 2) World_GetParams20 Script_CallErrorHook(""Fog Range: [%s] [ %.2f, %.2f ]"")"

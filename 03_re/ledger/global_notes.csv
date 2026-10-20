@@ -1,0 +1,88 @@
+global,meaning,write_instruction
+0x0053d7bc,interior field (+0x18) of a texture-slot record; loop write through ESI,0x0046de8c
+0x004da398,"fabs() of a local, per-frame scratch in the follow camera",0x00405347
+0x005396f4,query parameter saved from the stack (paired with 0x00539700) for the grid traversal,0x00444f68
+0x0053d754,ring/vertex count stored at triangulation start (0x0053d750 zeroed beside it),0x0046c0a4
+0x004dd1d8,round-robin index: incremented and wrapped each call,0x004397e5
+0x004e6274,"word field +0x40 of HUD panel object 0x004e6234, set to 1 before its vfunc +0x20",0x00410834
+0x004e6830,set to 0x1f in Hud_Init,0x0041066e
+0x004e6e54,"word field of a HUD panel object (via ESI), set before vfunc +0x20",0x00410bf5
+0x004e6f10,"word field +0x40 of a HUD panel object (via ESI), set to 1",0x00410be2
+0x004e70d0,"word field +0x40 of a HUD panel object (via ESI), set to 1",0x00410be2
+0x004eaf04,"player-slot timer value, stored before the call on 0x004eb1c4",0x00412a73
+0x004eb61c,flags field of a HUD slot array (stride 0x44c): flags &= 0x10,0x004135cb
+0x00561964,"scan-code to character table entries (immediate character codes, e.g. 0x37 7, 0x38 8)",0x0046ff4e
+0x00561a7c,scan-code to character table entries,0x0046ffb8
+0x00561ab8,scan-code to character table entry,0x0046ffea
+0x00561b14,scan-code to character table entries,0x0046fff0
+0x00561b74,"scan-code to character table entries (small values 2, 6)",0x0046fffb
+0x00561b94,scan-code to character table entry (0x7f),0x0047000f
+0x00561cdc,held-key table (stride 8) cleared in a loop,0x0046f5a1
+0x00561ce0,held-key table (stride 8) cleared in a loop,0x0046f9f5
+0x0056604c,key-name string pointer table entries (pointers into 0x004e09xx),0x00471472
+0x0056607c,key-name string pointer table entry,0x00471490
+0x005660a0,key-name string pointer table entries,0x0047149a
+0x005660f0,key-name string pointer table entries,0x004714b8
+0x0056612c,key-name string pointer table entries,0x00471512
+0x00566188,key-name string pointer table entries,0x00471526
+0x005661d8,key-name string pointer table entries,0x0047154e
+0x00566228,key-name string pointer table entries,0x004715b2
+0x005663c8,joystick per-device state cleared for device index < 3,0x00472309
+0x005663e8,joystick per-device state cleared for device index < 3,0x00472303
+0x00566408,joystick per-device state cleared for device index < 3,0x004722fd
+0x00566424,result-vector scratch written through EDX by the Vec3 helpers,0x0047269c
+0x004e2fb8,set to 1.0 by the frame timer 0x004a56d0 (role not established; see frame_timing),0x004a5701
+0x004e6278,pointer set to 0x004eda50 by the cursor raycast dispatch,0x00411468
+0x004f3294,"set to 1 when the mission object field +0x138 == 5, before 0x00402f10",0x00418e6b
+0x004db72c,"per-entry counter (+0x14) of the pickup table, 40 x 0x30, zeroed on save-record load",0x0041e85e
+0x004dc268,zeroed at player/physics init,0x0041fed9
+0x004f3340,list pointer cleared by Players_FreeAll,0x0041fbc1
+0x004f3688,list pointer cleared by Players_FreeAll (with 0x004f3690),0x0041fcc8
+0x004f375c,zeroed at init beside 0x004f3754 = 1.0 and a sound load (low-health alarm state),0x004204f2
+0x004f3a68,list pointer cleared by Players_FreeAll,0x0041fc93
+0x004f3a78,list pointer cleared by Players_FreeAll,0x0041fc07
+0x0057c5c9,interior of a clip vertex buffer (byte copy),0x0047ef3d
+0x0057c8c9,interior of a clip vertex buffer (byte copy),0x00480321
+0x0057c8cc,interior of a screen-clip vertex buffer (stride 0xc),0x0047853e
+0x0057c8d8,interior of a screen-clip vertex buffer (stride 0xc),0x0047853e
+0x0057c8e4,interior of a clip vertex buffer (via ESI),0x0047c452
+0x0057d0d0,per-vertex light array filled with 1.0 (paired array at +0x100),0x00478375
+0x0057d0d1,interior of a per-vertex attribute array (byte copy),0x0047ef7c
+0x0057d0d4,interior of a per-vertex attribute array,0x0047c462
+0x0057d1d0,"second per-vertex light array (+0x100), filled with 1.0",0x0047836f
+0x0057d1d1,interior of a per-vertex attribute array (byte copy),0x0047efb7
+0x0057d1d4,interior of a per-vertex attribute array,0x0047c466
+0x0057d2d1,interior of a per-vertex attribute array (byte copy),0x0047ef98
+0x0057d2d4,interior of a per-vertex attribute array,0x0047c477
+0x00631e78,blend preset field copied from the preset record +0x8,0x0049b67c
+0x0057daf8,zeroed in zRndrInit with 0x0057daf0..0x0057dafc,0x0048fdb2
+0x005cb5c0,poly-queue record field (ESI-0x138) set to 255.0,0x0049a61e
+0x005cba4c,poly-queue record field (ESI-0x138) scaled by a constant,0x0049a7dc
+0x004ddd3c,depth/counter incremented while indexing 0x00539830,0x0044bdbc
+0x004ddd40,counter incremented per processed Object3D node,0x0044b530
+0x00539b88,copied from 0x68-byte records,0x0044ad72
+0x0056ccac,set to 3 in the diamond-bucket builder,0x0044c459
+0x0056cf90,bucket array (stride 0x2d4) cleared in a loop,0x0044c8f9
+0x0056d264,bucket array (stride 0x2d4) cleared in a loop,0x0044c8f9
+0x0056c780,copied from 0x0056c788 before 0x00484350,0x004c3db5
+0x00575ddc,"boolean from Script_ArgBool, stored by one command branch",0x004c4c07
+0x0053d7b8,field (+0x14) of a texture-slot record set to 1 (via ESI),0x0046df2b
+0x0053d7dc,field (+0x18) of a texture-slot record cleared (via ESI),0x0046d611
+0x004f3abc,derived timestep value stored next to invDt 0x004f3aac,0x00426403
+0x004f3c68,copy of the vehicle world position +0x3ec..+0x3f4,0x0042d0bf
+0x00779a74,sound handle loaded by the mount-array loader,0x004b124c
+0x0053a0b8,set to 0x38000100 by Anim_ResetGlobals,0x0045e17c
+0x0056bbec,"set from EDX in video bring-up, beside 0x0056bbf4 = 0.02",0x004a7584
+0x0056bc98,driver count incremented in the enumeration callback,0x004a93fb
+0x00632148,scene-begin reference count,0x004a74de
+0x00633650,"vertex scratch (stride 0x20) colour, initialised 0xff000000",0x004a76d9
+0x00633690,"vertex scratch (stride 0x20) colour, initialised 0xff000000",0x004a76d4
+0x006336b0,"vertex scratch (stride 0x20) colour, initialised 0xff000000",0x004a76d1
+0x006336c4,vertex scratch colour set by Render_FillVertexScratchColour,0x004accd3
+0x006336d0,"vertex scratch (stride 0x20) colour, initialised 0xff000000",0x004a76d9
+0x006336e4,vertex scratch colour set by Render_FillVertexScratchColour,0x004accd0
+0x006336f0,"vertex scratch (stride 0x20) colour, initialised 0xff000000",0x004a76d6
+0x00633704,vertex scratch colour set by Render_FillVertexScratchColour,0x004accce
+0x00633710,"vertex scratch (stride 0x20) colour, initialised 0xff000000",0x004a76d4
+0x00633724,vertex scratch colour set by Render_FillVertexScratchColour,0x004acccb
+0x00633730,"vertex scratch (stride 0x20) colour, initialised 0xff000000",0x004a76d1

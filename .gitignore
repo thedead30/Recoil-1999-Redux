@@ -1,0 +1,32 @@
+# Git here is an audit trail of RE work, not an asset store.
+# Large binary inputs are referenced, never committed.
+00_original/
+01_evidence/frames_index/combat_run/
+01_evidence/frames_index/clean_run/
+02_extracted/textures_all/
+02_extracted/textures_test/
+02_extracted/image/
+02_extracted/savegames/
+06_tools/mech3ax/
+05_remake/build/
+**/__pycache__/
+*.pyc
+.migration.log
+06_tools/asset_pipeline/output/
+01_evidence/ttd_tools/
+03_re/decomp_raw/
+commitmsg.tmp
+
+03_re/harvest/
+
+captures/
+
+05_remake/build/
+
+# test artifact: a fuzz test creates a file named "Â" (UTF-8) in 05_remake when run from there
+05_remake/Â
+
+# release output (tools/make_release.py)
+dist/
+05_remake/setup/quality_example.png
+tools/.private_terms

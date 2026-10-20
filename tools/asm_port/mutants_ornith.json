@@ -1,0 +1,282 @@
+{
+ "VMethod_RetNop4": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "ret 0x4",
+   "replacement": "ret 0x8",
+   "reason": "Changes stack cleanup amount, corrupts caller stack frame."
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "ret 0x4",
+   "replacement": "ret",
+   "reason": "Drops stack cleanup operand, leaves parameters on caller stack."
+  }
+ ],
+ "AiList_ResetNonIdle": [
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "jz L_401c4a",
+   "replacement": "jnz L_401c4a",
+   "reason": "Inverts the skip condition, causing the loop to process idle vehicles instead of non-idle ones."
+  },
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "mov ebx, 0x1",
+   "replacement": "mov ebx, 0x0",
+   "reason": "Changes the target state constant from 1 to 0, altering both the filter condition and the state written to vehicles."
+  }
+ ],
+ "AiVeh_EnterState1": [
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "jz L_401cbc",
+   "replacement": "jnz L_401cbc",
+   "reason": "Inverts the conditional jump after comparing the vehicle state, causing the function to incorrectly skip or perform the state assignment based on the wrong condition."
+  },
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "cmp ecx, 0x1",
+   "replacement": "cmp ecx, 0x2",
+   "reason": "Changes the constant in the state comparison, making the check target the wrong state value and altering whether the state field gets updated."
+  }
+ ],
+ "AiNet_ResetPlayerVehicles": [
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "jz L_402f4d",
+   "replacement": "jnz L_402f4d",
+   "reason": "Inverts the initial null-pointer guard, causing the function to enter the loop with an invalid ESI and likely crash."
+  },
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "mov eax, dword ptr \\[esi \\+ 0x4\\]",
+   "replacement": "mov eax, dword ptr \\[esi \\+ 0x8\\]",
+   "reason": "Reads from the wrong offset in the vehicle node, corrupting the pointer used for subsequent vehicle state comparisons."
+  }
+ ],
+ "NetEdge_Init": [
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "jnz L_4036a5",
+   "replacement": "jz L_4036a5",
+   "reason": "Inverts the conditional branch so the early-exit path is taken when it should not be, flipping control flow for inputs that trigger the FPU comparison flags."
+  },
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "mov dword ptr \\[esi \\+ 0x34\\], edx",
+   "replacement": "mov dword ptr \\[esi \\+ 0x38\\], edx",
+   "reason": "Shifts the output store by 4 bytes to an adjacent slot, corrupting the structure layout and causing tests reading the expected field to observe wrong data."
+  }
+ ],
+ "NetGraph_LinkVehiclesOnSamePath": [
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "jz L_4037b4",
+   "replacement": "jnz L_4037b4",
+   "reason": "Inverts the initial null-pointer check, causing the function to skip the main loop when the pointer is valid."
+  },
+  {
+   "file": "05_remake/src/Battlesport/ai_net.cpp",
+   "regex": "mov dword ptr \\[eax \\+ 0xc\\], ecx",
+   "replacement": "nop",
+   "reason": "Drops the store that updates the vehicle's next-pointer field, breaking the linked list insertion."
+  }
+ ],
+ "Widget_ReturnTrue": [
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "0x1",
+   "replacement": "0x0",
+   "reason": "Inverts the boolean return value from true to false."
+  },
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "ret 0x8",
+   "replacement": "ret 0x4",
+   "reason": "Alters stack cleanup bytes, potentially corrupting the caller frame or causing a crash on return."
+  }
+ ],
+ "Cheat_ClearInfiniteLives": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "jz L_406d12",
+   "replacement": "jnz L_406d12",
+   "reason": "Inverts the null-pointer check jump, causing the function to proceed when the global data pointer is null and skip when valid."
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "mov dword ptr \\[eax \\+ 0xf38\\], 0x0",
+   "replacement": "nop",
+   "reason": "Drops the store that resets the lives counter, silently failing to clear infinite lives."
+  }
+ ],
+ "Widget_EmptyVirtual": [
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "ret 0x4",
+   "replacement": "ret 0x8",
+   "reason": "Changes stack cleanup amount, corrupting caller's stack frame"
+  },
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "ret 0x4",
+   "replacement": "ret 0x0",
+   "reason": "Removes stack cleanup, causing stack imbalance on function return"
+  }
+ ],
+ "Settings_ApplySoundVolume": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "0x44",
+   "replacement": "0x48",
+   "reason": "Changes the offset into g_SettingsBlock, causing the volume to be written to an incorrect field."
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "fstp dword ptr \\[eax\\]",
+   "replacement": "nop",
+   "reason": "Drops the store of the volume value into the settings block, leaving the setting unchanged."
+  }
+ ],
+ "PtrVector_ClearEnd": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "jz L_40bdde",
+   "replacement": "jnz L_40bdde",
+   "reason": "Inverts the empty-range check, causing the function to skip the copy loop even when the range is empty."
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "mov dword ptr \\[edx\\], edi",
+   "replacement": "mov dword ptr \\[edx \\+ 0x4\\], edi",
+   "reason": "Shifts the destination store offset by 4 bytes, writing each copied element to the wrong memory location and corrupting adjacent data."
+  }
+ ],
+ "Stub_NoOp_TwoStackArgs": [
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "ret 0x8",
+   "replacement": "ret 0x10",
+   "reason": "Changes stack cleanup amount to over-clean, corrupting the caller's stack frame."
+  },
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "ret 0x8",
+   "replacement": "ret 0x0",
+   "reason": "Drops stack cleanup entirely, causing the stack pointer to leak bytes on each call."
+  }
+ ],
+ "TextWidget_SetFontHandle": [
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "0x154",
+   "replacement": "0x158",
+   "reason": "Shifts the destination field by 4 bytes, corrupting the adjacent struct member instead of storing the font handle at the correct offset."
+  },
+  {
+   "file": "05_remake/src/unattributed/ui_widgets.cpp",
+   "regex": "\\[esp \\+ 0x4\\]",
+   "replacement": "[esp + 0x8]",
+   "reason": "Loads from the wrong stack slot (4th argument instead of the 3rd), causing an unrelated value to be stored as the font handle."
+  }
+ ],
+ "WidgetContainer_SetField4": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "mov dword ptr \\[ecx \\+ 0x4\\], eax",
+   "replacement": "",
+   "reason": "Drops the store instruction, so the function fails to write the value to the target member field."
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "\\[ecx \\+ 0x4\\]",
+   "replacement": "\\[ecx \\+ 0x8\\]",
+   "reason": "Changes the memory offset from 0x4 to 0x8, causing the store to write to the wrong field and potentially corrupt adjacent memory."
+  }
+ ],
+ "HudItem_NopOnSub": [
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "g_Data_004da000 \\+ 0xcdac",
+   "replacement": "g_Data_004da000 \\+ 0xcdad",
+   "reason": "Shifts the global data offset by 4 bytes, causing the function to load an incorrect value."
+  },
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "eax \\+ 0x1c",
+   "replacement": "eax \\+ 0x20",
+   "reason": "Alters the LEA offset, changing the computed address/value passed to Hud_Nop."
+  }
+ ],
+ "HudTimer_SetTime": [
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "\\[eax \\+ 0x2a4\\]",
+   "replacement": "\\[eax \\+ 0x2a8\\]",
+   "reason": "Changes the destination memory offset for the stored float, which should be caught by tests verifying the timer value is written to the correct field."
+  },
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "fstp dword ptr \\[eax \\+ 0x2a4\\]",
+   "replacement": "fld dword ptr \\[eax \\+ 0x2a4\\]",
+   "reason": "Drops the store by replacing fstp with fld, leaving the value on the FPU stack instead of writing it to memory. Tests checking the target field will fail."
+  }
+ ],
+ "HudLabels_Nop3": [
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "0xc32c",
+   "replacement": "0xc32d",
+   "reason": "Shifts the data offset for the first Hud_Nop call, altering the loaded parameter."
+  },
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "0xc4a4",
+   "replacement": "0xc4a5",
+   "reason": "Shifts the data offset for the final jmp, pointing to a different data field."
+  }
+ ],
+ "VMethod_ReturnTrue_00412bd0": [
+  {
+   "file": "05_remake/src/Battlesport/hud_hud.cpp",
+   "regex": "mov eax, 0x1",
+   "replacement": "mov eax, 0x0",
+   "reason": "Flips the return value from 1 (true) to 0 (false), which tests expecting a true result should detect."
+  },
+  {
+   "file": "05_remake/src/Battlesport/hud_hud.cpp",
+   "regex": "mov eax, 0x1\\n",
+   "replacement": "",
+   "reason": "Drops the instruction that sets eax, leaving the return value undefined and causing non-deterministic behavior that tests should catch."
+  }
+ ],
+ "ScoreRows_QuickSort": [
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "jle L_414920",
+   "replacement": "jg L_414920",
+   "reason": "Inverts the early-exit conditional jump, causing the sort loop to terminate incorrectly or recurse infinitely."
+  },
+  {
+   "file": "05_remake/src/unattributed/menus.cpp",
+   "regex": "mov dword ptr \\[esp \\+ 0xc\\], ebp",
+   "replacement": "mov dword ptr [esp + 0x8], ebp",
+   "reason": "Shifts the saved EBP to an overlapping stack slot, corrupting the previously saved EBX register."
+  }
+ ],
+ "VMethod_ReturnFalse4_00414b50": [
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "ret 0x4",
+   "replacement": "ret 0x0",
+   "reason": "Changes the stack-cleanup constant, leaving caller arguments on the stack and corrupting the return frame."
+  },
+  {
+   "file": "05_remake/src/unattributed/hud.cpp",
+   "regex": "xor eax, eax",
+   "replacement": "mov eax, 1",
+   "reason": "Replaces the zeroing instruction with a constant load, flipping the boolean return value from false to true."
+  }
+ ]
+}

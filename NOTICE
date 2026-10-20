@@ -1,0 +1,23 @@
+Recoil Redux - NOTICE
+
+Recoil is (c) 1999 Electronic Arts Inc. / Zipper Interactive. "Recoil", "Electronic Arts" and "Zipper Interactive"
+are trademarks of their respective owners. This project is a non-commercial fan rebuild. It is not affiliated with,
+endorsed by or supported by Electronic Arts or Zipper Interactive.
+
+This project contains no part of the game: no executable, data, maps, textures, sounds, videos or music. To install
+or build the remake you need your own copy of Recoil (the 1999-01-29 build). Every game file is read from that copy
+on your own computer.
+
+The source code here was written by reimplementing the original program's behaviour so that it can run on modern
+Windows (interoperability). Constants and messages carry tags naming where in the original they come from.
+
+The remake's source code is licensed under the GNU General Public License version 3 or later (see LICENSE). The
+licence applies to this project's code only; it grants nothing in Recoil itself.
+
+Third-party software that is not included here and must be obtained separately:
+  - dgVoodoo2 (c) Dege - https://github.com/dege-diosg/dgVoodoo2 - DirectDraw/Direct3D wrapper used to run on
+    modern Windows.
+  - Microsoft Visual Studio Build Tools, Python, and the Python packages capstone, pefile and minidump (developer
+    tools only).
+
+If you hold rights to Recoil and have concerns about this project, please open an issue on the project page.

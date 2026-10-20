@@ -1,0 +1,22 @@
+address,size,symbol,header,note
+0x004dc998,12,g_DefaultDir_004dc998,unattributed/math3d.h,math3d default direction (0 0 -1)
+0x004e0e84,4,g_TransformFlagSP_004e0e84,unattributed/transform.h,transform identity-flag stack pointer (initial value relocated to the port's stack)
+0x004e0e88,4,g_TransformMatrixSP_004e0e88,unattributed/transform.h,transform matrix-pointer stack pointer (initial value relocated)
+0x004e0fc0,4,g_BFETolerance_004e0fc0,unattributed/geometry.h,back-face cull epsilon
+0x004e4668,4,g_SettingsRegRoot_004e4668,unattributed/settings.h,pointer to the registry path text (relocated)
+0x004e466c,16,g_SettingsRegText_004e466c,unattributed/settings.h,registry path text
+0x004e5d00,208,g_SettingsBlock_004e5d00,unattributed/settings.h,settings block (52 dwords)
+0x0053a748,4,g_TriangulateVertices_0053a748,GameZRecoil/zGeometry/zgeo_model.h,triangulator vertex array pointer
+0x0053a750,12288,g_TriangleList_0053a750,GameZRecoil/zGeometry/zgeo_model.h,triangle list (1024 index triples)
+0x0053d750,4,g_TriangleCount_0053d750,GameZRecoil/zGeometry/zgeo_model.h,triangle count
+0x0053d754,4,g_TriangulateWord_0053d754,GameZRecoil/zGeometry/zgeo_model.h,word written by Triangulate_RingPair
+0x0053d758,16,g_NewellPlane_0053d758,GameZRecoil/zGeometry/zgeo_model.h,plane a b c d
+0x00566420,12,g_Vec3Scratch_00566420,unattributed/math3d.h,math3d scratch vector
+0x00566838,48,g_ViewParams_00566838,unattributed/view.h,projection block
+0x00566868,128,g_TransformMatrixStack_00566868,unattributed/transform.h,transform matrix-pointer stack (32 slots)
+0x005668e8,48,g_ViewMatrixA_005668e8,unattributed/transform.h,view matrix A
+0x00566920,48,g_CameraWorldB_00566920,unattributed/transform.h,camera world matrix B
+0x00566950,128,g_TransformFlagStack_00566950,unattributed/transform.h,transform identity-flag stack (32 slots)
+0x005669d8,12,g_DefaultAngles_005669d8,unattributed/view.h,billboard default angles
+0x0056bcd0,24,g_SettingsNodeState_0056bcd0,unattributed/settings.h,settings node-list state
+0x005761e0,8,g_ScreenCentre_005761e0,unattributed/view.h,screen centre

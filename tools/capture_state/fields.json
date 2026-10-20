@@ -1,0 +1,33 @@
+{
+  "_doc": "Addresses read by capture_state.py. Every field names its source (spec file / ledger address). Pointers: 'ptr' = deref chain from a global; offsets relative to the resolved object. Do not add a field without a source.",
+  "globals": {
+    "dt":            {"addr": "0x004f3ac4", "type": "f32", "source": "04_spec/systems/vehicle.md s1 (clamped timestep)"},
+    "inv_dt":        {"addr": "0x004f3aac", "type": "f32", "source": "04_spec/systems/vehicle.md s1"},
+    "clock":         {"addr": "0x0056b428", "type": "f32", "source": "04_spec/systems/vehicle.md s1 (game clock, seconds)"},
+    "frame_dt":      {"addr": "0x0056b424", "type": "f32", "source": "04_spec/systems/app.md s4 (dt, 0.1 on first frame)"},
+    "control_flags": {"addr": "0x004e5d3c", "type": "u32", "deref": true, "source": "ledger ControlFlags_GetBit0 0x00407e50 (*[0x004e5d3c])"}
+  },
+  "player_node": {"addr": "0x004f3a88", "source": "04_spec/systems/vehicle.md s1 (player node)"},
+  "vehicle_list": {"addr": "0x004f3a7c", "next": "0x0", "source": "04_spec/structs/PlayerEntry.md (list at [0x004f3a7c], +0 next)"},
+  "vehicle_inst_fields": {
+    "_source": "04_spec/structs/VehicleInstance.md (inst = [node+4])",
+    "airborne":      {"off": "0x10",  "type": "u32"},
+    "skid":          {"off": "0x20",  "type": "u32"},
+    "state":         {"off": "0x60",  "type": "u32"},
+    "rates_pyr":     {"off": "0x90",  "type": "f32x3"},
+    "vel_world":     {"off": "0xa4",  "type": "f32x3"},
+    "vel_body":      {"off": "0xb0",  "type": "f32x3"},
+    "speed_cap":     {"off": "0xc8",  "type": "f32"},
+    "angles_pyr":    {"off": "0x3bc", "type": "f32x3"},
+    "position":      {"off": "0x3ec", "type": "f32x3"},
+    "hit_points":    {"off": "0xf34", "type": "f32"}
+  },
+  "camera_fields": {
+    "_source": "04_spec/structs/CameraClassData.md; the active camera node pointer is NOT yet sourced, so camera capture is disabled until one is cited",
+    "enabled": false
+  },
+  "effect_fields": {
+    "_source": "not yet sourced (zeffect globals); disabled",
+    "enabled": false
+  }
+}
