@@ -64,6 +64,10 @@ installed: no Python, no runtimes. Everything is on one page:
 4. Click **Install**, then start *Recoil Redux* from the desktop shortcut. Setup also makes the mission maps from your
    copy (about 10 seconds).
 
+**Updating:** run the new Setup. When it finds Recoil Redux already installed it offers **Upgrade** (keeps your saved
+games, screenshots, settings and textures; takes seconds) or **Clean install** (deletes everything in the folder,
+including saved games and the game's saved options, and installs fresh).
+
 ## What's in version 1 (1.01: the mission map)
 
 Each feature below lists its `redux.ini` switch.

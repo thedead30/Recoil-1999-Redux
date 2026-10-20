@@ -24,12 +24,14 @@
 #include "source.h"
 #include "upscale.h"
 #include "mapgen.h"
+#include "zbdimg.h"
 #include "quality_example.h"
 
 #include <wincodec.h>
 
 #include <algorithm>
 #include <cstdio>
+#include <filesystem>
 #include <functional>
 #include <set>
 #include <string>
@@ -476,6 +478,120 @@ bool RunFromZip()
     return d.find(L"\\appdata\\local\\temp\\") != std::wstring::npos;
 }
 
+// ---------------------------------------------------------------- an existing install: upgrade or clean install
+// (user 2026-10-20: "upgrade keeps screenshots and save games; clean install is full clean")
+const char kReduxVersion[] = "1.02";            // written to redux_version.txt by this Setup
+const wchar_t kVersionFile[] = L"redux_version.txt";
+
+bool IsReduxInstall(const std::wstring& dir)
+{
+    return !dir.empty() && GetFileAttributesW((dir + L"\\" + kExeName).c_str()) != INVALID_FILE_ATTRIBUTES &&
+           GetFileAttributesW((dir + L"\\original\\Recoil.exe").c_str()) != INVALID_FILE_ATTRIBUTES;
+}
+
+std::string InstalledVersion(const std::wstring& dir)   // "1.0 or 1.01" before version files
+{
+    std::vector<std::uint8_t> d;
+    if (!ReadAll(std::filesystem::path(dir) / kVersionFile, d) || d.empty()) return "1.0 or 1.01";
+    std::string v(d.begin(), d.end());
+    v = v.substr(0, v.find_first_of("\r\n"));
+    return v.empty() ? "1.0 or 1.01" : v;
+}
+
+void WriteVersion(const std::wstring& dest)
+{
+    const std::string v = std::string(kReduxVersion) + "\r\n";
+    WriteFileAll(dest + L"\\" + kVersionFile, std::vector<std::uint8_t>(v.begin(), v.end()));
+}
+
+// the folder of the "Recoil Redux" desktop shortcut that Setup makes, if it is a Redux install
+std::wstring FindExisting()
+{
+    std::wstring found;
+    PWSTR desk = nullptr;
+    if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Desktop, 0, nullptr, &desk))) {
+        IShellLinkW* sl = nullptr;
+        IPersistFile* pf = nullptr;
+        if (SUCCEEDED(CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_IShellLinkW, reinterpret_cast<void**>(&sl))) &&
+            SUCCEEDED(sl->QueryInterface(IID_IPersistFile, reinterpret_cast<void**>(&pf))) &&
+            SUCCEEDED(pf->Load((std::wstring(desk) + L"\\Recoil Redux.lnk").c_str(), STGM_READ))) {
+            wchar_t dir[MAX_PATH] = {};
+            if (SUCCEEDED(sl->GetWorkingDirectory(dir, MAX_PATH)) && IsReduxInstall(dir)) found = dir;
+        }
+        if (pf) pf->Release();
+        if (sl) sl->Release();
+        CoTaskMemFree(desk);
+    }
+    if (found.empty()) {   // the default install folder
+        wchar_t home[MAX_PATH] = L"C:";
+        GetEnvironmentVariableW(L"USERPROFILE", home, MAX_PATH);
+        const std::wstring d = std::wstring(home) + L"\\Games\\Recoil Redux";
+        if (IsReduxInstall(d)) found = d;
+    }
+    return found;
+}
+
+// adds the settings this version has and the file lacks; every value already there stays (the player's choices)
+void MergeReduxIni(const std::wstring& dest, bool map, const Log& log)
+{
+    const std::wstring ini = dest + L"\\redux.ini";
+    wchar_t pack[MAX_PATH] = {};
+    GetPrivateProfileStringW(L"Textures", L"Pack", L"", pack, MAX_PATH, ini.c_str());
+    const std::string text = ReduxIniText(pack[0] != 0, map);
+    std::wstring section;
+    int added = 0;
+    std::size_t at = 0;
+    while (at < text.size()) {
+        std::size_t e = text.find('\n', at);
+        if (e == std::string::npos) e = text.size();
+        std::string line = text.substr(at, e - at);
+        at = e + 1;
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (line.empty() || line[0] == ';') continue;
+        if (line[0] == '[') { section = Widen(line.substr(1, line.find(']') - 1)); continue; }
+        const std::size_t eq = line.find('=');
+        if (eq == std::string::npos) continue;
+        const std::wstring key = Widen(line.substr(0, eq)), value = Widen(line.substr(eq + 1));
+        wchar_t got[8] = {};
+        GetPrivateProfileStringW(section.c_str(), key.c_str(), L"\x01", got, 8, ini.c_str());
+        if (got[0] == L'\x01') {
+            WritePrivateProfileStringW(section.c_str(), key.c_str(), value.c_str(), ini.c_str());
+            ++added;
+        }
+    }
+    log("Redux settings kept (redux.ini): " + std::to_string(added) + " new setting" + (added == 1 ? "" : "s") + " added");
+}
+
+// keeps everything in the folder - game files, textures, saved games, screenshots, settings - and replaces the program
+std::wstring Upgrade(const std::wstring& dest, std::wstring payload, const Log& log)
+{
+    if (payload.empty()) payload = DefaultPayload();
+    if (!IsReduxInstall(dest)) throw SetupError{"no Recoil Redux install in " + Narrow(dest)};
+    log("upgrading Recoil Redux " + InstalledVersion(dest) + " in " + Narrow(dest) + " to " + kReduxVersion);
+    const std::wstring target = InstallRemake(payload, dest, log);
+    const bool map = GenerateMaps(dest, log) > 0;
+    MergeReduxIni(dest, map, log);
+    WriteVersion(dest);
+    log(std::string("done - Recoil Redux ") + kReduxVersion + "; saved games, screenshots and settings kept");
+    return target;
+}
+
+// full clean (user 2026-10-20): everything in the install folder and the game's saved options are removed first
+void CleanOut(const std::wstring& dest, const Log& log)
+{
+    if (!IsReduxInstall(dest)) throw SetupError{Narrow(dest) + " is not a Recoil Redux install - nothing was deleted"};
+    std::error_code ec;
+    int n = 0;
+    for (const auto& e : std::filesystem::directory_iterator(dest, ec)) {
+        std::filesystem::remove_all(e.path(), ec);
+        if (ec) throw SetupError{"cannot delete " + Narrow(e.path().wstring()) + " (is the game still running?)"};
+        ++n;
+    }
+    // the options the game saves (Settings_SaveToRegistry; with [Launcher] KeepSettings they are read back from here)
+    RegDeleteTreeW(HKEY_CURRENT_USER, L"SOFTWARE\\Zipper\\RECOIL");
+    log("clean install: " + std::to_string(n) + " items removed from " + Narrow(dest) + ", saved game options reset");
+}
+
 // pack: an asset pack zip; generate: HD textures made here with Real-ESRGAN (esrgan dir); neither: the original textures
 std::wstring Install(const std::wstring& src, const std::wstring& dgv, const std::wstring& dest, const std::wstring& pack,
                      bool generate, std::wstring esrgan, std::wstring payload, bool shortcut, const Log& log, const Progress& progress)
@@ -500,6 +616,7 @@ std::wstring Install(const std::wstring& src, const std::wstring& dgv, const std
     const bool map = GenerateMaps(dest, log) > 0;
     WriteReduxIni(dest, tex, map, log);
     const std::wstring target = InstallRemake(payload, dest, log);
+    WriteVersion(dest);
     if (shortcut) MakeShortcut(target, log);
     log("done - start Recoil Redux from the desktop shortcut or " + Narrow(target));
     return target;
@@ -508,8 +625,8 @@ std::wstring Install(const std::wstring& src, const std::wstring& dgv, const std
 // ---------------------------------------------------------------- command line
 int RunCli(int argc, wchar_t** argv)
 {
-    std::wstring src, dgv, dest, payload, pack, esrgan, maps_only;
-    bool shortcut = true, generate = false;
+    std::wstring src, dgv, dest, payload, pack, esrgan, maps_only, upgrade;
+    bool shortcut = true, generate = false, clean = false;
     for (int i = 1; i < argc; ++i) {
         const std::wstring a = argv[i];
         auto next = [&]() { return i + 1 < argc ? std::wstring(argv[++i]) : std::wstring(); };
@@ -522,6 +639,8 @@ int RunCli(int argc, wchar_t** argv)
         else if (a == L"--esrgan") esrgan = next();
         else if (a == L"--no-shortcut") shortcut = false;
         else if (a == L"--maps") maps_only = next();
+        else if (a == L"--upgrade") upgrade = next();
+        else if (a == L"--clean") clean = true;
     }
     if (!AttachConsole(ATTACH_PARENT_PROCESS)) AllocConsole();
     HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -531,11 +650,22 @@ int RunCli(int argc, wchar_t** argv)
         WriteFile(out, l.data(), DWORD(l.size()), &w, nullptr);
     };
     if (!maps_only.empty()) return GenerateMaps(maps_only, print) > 0 ? 0 : 3;   // test: the maps of an installed copy
+    if (!upgrade.empty()) {
+        try {
+            Upgrade(upgrade, payload, print);
+            return 0;
+        } catch (const SetupError& e) {
+            print("setup: " + e.msg);
+            return 2;
+        }
+    }
     if (src.empty() || dgv.empty() || dest.empty()) {
-        print("usage: Setup.exe --source COPY --dgvoodoo ZIP --dest DIR [--pack ZIP | --generate] [--esrgan DIR] [--payload EXE] [--no-shortcut]");
+        print("usage: Setup.exe --source COPY --dgvoodoo ZIP --dest DIR [--clean] [--pack ZIP | --generate] [--esrgan DIR] [--payload EXE] "
+              "[--no-shortcut]\r\n       Setup.exe --upgrade DIR [--payload EXE]");
         return 1;
     }
     try {
+        if (clean) CleanOut(dest, print);
         Install(src, dgv, dest, pack, generate, esrgan, payload, shortcut, print, [](int, int) {});
         return 0;
     } catch (const SetupError& e) {
@@ -556,6 +686,7 @@ struct Ui {
     std::vector<HWND> page1;
     HFONT font, bold;
     bool source_ok = false, busy = false, finished = false;
+    std::wstring clean_dir;   // a Redux install to wipe before installing (the player chose "Clean install")
 } ui;
 
 std::wstring Text(HWND h)
@@ -733,7 +864,13 @@ void StartInstall()
         while (empty && FindNextFileW(h, &fd));
         FindClose(h);
     }
-    if (!empty && MessageBoxW(ui.wnd, (dest + L" is not empty. Install into it anyway?").c_str(), kTitle, MB_YESNO | MB_ICONQUESTION) != IDYES)
+    const bool clean = !ui.clean_dir.empty() && _wcsicmp(ui.clean_dir.c_str(), dest.c_str()) == 0;
+    if (clean) {
+        if (MessageBoxW(ui.wnd, (L"Clean install: everything in " + dest + L" will be deleted, including saved games and the game's saved "
+                                 L"options, and Recoil Redux installed fresh.\r\n\r\nContinue?").c_str(),
+                        kTitle, MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON2) != IDYES)
+            return;
+    } else if (!empty && MessageBoxW(ui.wnd, (dest + L" is not empty. Install into it anyway?").c_str(), kTitle, MB_YESNO | MB_ICONQUESTION) != IDYES)
         return;
     ui.busy = true;
     UpdateInstallButton();
@@ -745,6 +882,7 @@ void StartInstall()
         auto log = [wnd](const std::string& s) { PostMessageW(wnd, WmLog, 0, LPARAM(new std::string(s))); };
         bool ok = false;
         try {
+            if (clean) CleanOut(dest, log);
             Install(src, dgv, dest, pack, generate, L"", L"", sc, log, [wnd](int i, int n) { PostMessageW(wnd, WmProgress, WPARAM(i), LPARAM(n)); });
             ok = true;
         } catch (const SetupError& e) {
@@ -755,6 +893,64 @@ void StartInstall()
         PostMessageW(wnd, WmDone, ok, 0);
         CoUninitialize();
     }).detach();
+}
+
+// Setup found Recoil Redux already installed: upgrade it (nothing else to fill in) or clean install (the normal page, the
+// folder emptied first). Returns false when the player cancels.
+bool AskExisting()
+{
+    const std::wstring dir = FindExisting();
+    if (dir.empty()) return true;
+    const std::wstring head = L"Recoil Redux " + Widen(InstalledVersion(dir)) + L" is already installed";
+    const std::wstring body = L"in " + dir + L"\r\n\r\nThis Setup installs Recoil Redux " + Widen(kReduxVersion) + L".";
+    const std::wstring up = L"Upgrade to " + Widen(kReduxVersion) +
+                            L"\nKeeps your saved games, screenshots, settings and textures. Takes a few seconds.";
+    TASKDIALOG_BUTTON buttons[] = {
+        {1000, up.c_str()},
+        {1001, L"Clean install\nDeletes everything in the folder, including saved games and the game's saved options, then installs "
+               L"Recoil Redux fresh (you choose the dgVoodoo2 zip and your Recoil copy as for a first install)."},
+    };
+    TASKDIALOGCONFIG c{sizeof c};
+    c.hwndParent = ui.wnd;
+    c.dwFlags = TDF_USE_COMMAND_LINKS | TDF_ALLOW_DIALOG_CANCELLATION;
+    c.dwCommonButtons = TDCBF_CANCEL_BUTTON;
+    c.pszWindowTitle = kTitle;
+    c.pszMainIcon = TD_INFORMATION_ICON;
+    c.pszMainInstruction = head.c_str();
+    c.pszContent = body.c_str();
+    c.cButtons = 2;
+    c.pButtons = buttons;
+    c.nDefaultButton = 1000;
+    int pressed = IDCANCEL;
+    if (FAILED(TaskDialogIndirect(&c, &pressed, nullptr, nullptr)) || pressed == IDCANCEL) return false;
+    SetWindowTextW(ui.dest, dir.c_str());
+    if (pressed == 1001) {
+        ui.clean_dir = dir;
+        AppendLog("Clean install into " + Narrow(dir) + ": choose the dgVoodoo2 zip, your Recoil copy and the textures, then Install.");
+        return true;
+    }
+    // upgrade: the page is not needed
+    for (HWND h : ui.page1)
+        if (h != ui.log && h != ui.bar && h != ui.next) EnableWindow(h, FALSE);
+    ui.busy = true;
+    UpdateInstallButton();
+    HWND wnd = ui.wnd;
+    std::thread([=] {
+        CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+        auto log = [wnd](const std::string& s) { PostMessageW(wnd, WmLog, 0, LPARAM(new std::string(s))); };
+        bool ok = false;
+        try {
+            Upgrade(dir, L"", log);
+            ok = true;
+        } catch (const SetupError& e) {
+            log("FAILED: " + e.msg);
+        } catch (const std::exception& e) {
+            log(std::string("FAILED: ") + e.what());
+        }
+        PostMessageW(wnd, WmDone, ok, 1);
+        CoUninitialize();
+    }).detach();
+    return true;
 }
 
 LRESULT CALLBACK WndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp)
@@ -805,7 +1001,7 @@ LRESULT CALLBACK WndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp)
         if (wp) {
             ui.finished = true;
             SetWindowTextW(ui.next, L"Close");
-            MessageBoxW(w, L"Recoil Redux is installed.", kTitle, MB_ICONINFORMATION);
+            MessageBoxW(w, lp ? L"Recoil Redux is upgraded." : L"Recoil Redux is installed.", kTitle, MB_ICONINFORMATION);
         }
         UpdateInstallButton();
         return 0;
@@ -902,6 +1098,10 @@ int RunGui(HINSTANCE inst)
     ui.next = Make(p, L"BUTTON", L"Install", V | BS_DEFPUSHBUTTON, S(544), S(660), S(96), S(28), IdNext);
     UpdateInstallButton();
     ShowWindow(ui.wnd, SW_SHOW);
+    if (!AskExisting()) {
+        DestroyWindow(ui.wnd);
+        return 0;
+    }
     MSG m;
     while (GetMessageW(&m, nullptr, 0, 0)) {
         if (IsDialogMessageW(ui.wnd, &m)) continue;
