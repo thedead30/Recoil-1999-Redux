@@ -19,6 +19,7 @@
 #include <wincodec.h>
 
 #include "upscale.h"
+#include "zbdimg.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -31,21 +32,8 @@
 #pragma comment(lib, "windowscodecs.lib")
 
 namespace setup {
-namespace {
 
 namespace fs = std::filesystem;
-
-struct Img {
-    int w = 0, h = 0;
-    std::vector<std::uint8_t> bgra;   // w*h*4
-};
-
-struct Entry {
-    std::string name;
-    Img colour;
-    int aw = 0, ah = 0;
-    std::vector<std::uint8_t> alpha;   // aw*ah, empty = opaque
-};
 
 bool ReadAll(const fs::path& p, std::vector<std::uint8_t>& d)
 {
@@ -207,6 +195,8 @@ Img Resize(const Img& src, int tw, int th)
     if (bmp) bmp->Release();
     return out;
 }
+
+namespace {
 
 // alpha plane enlarged bilinearly to tw x th
 std::vector<std::uint8_t> ScaleAlpha(const std::vector<std::uint8_t>& a, int aw, int ah, int tw, int th)

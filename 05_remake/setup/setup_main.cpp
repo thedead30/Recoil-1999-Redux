@@ -23,6 +23,7 @@
 
 #include "source.h"
 #include "upscale.h"
+#include "mapgen.h"
 #include "quality_example.h"
 
 #include <wincodec.h>
@@ -367,18 +368,20 @@ void MakeShortcut(const std::wstring& target, const Log& log)
 
 // Recoil Redux v1 settings (05_remake/redux, REDUX.md: every feature is a switch; deleting the file plays Recoil Classic).
 // Must stay byte-identical to tools/setup/setup_core.py redux_ini_text (compare_setup.py checks it).
-std::string ReduxIniText(bool pack)
+std::string ReduxIniText(bool pack, bool map)
 {
     return std::string(
         "; Recoil Redux settings, written by Setup. Delete this file (or empty the values) to play Recoil Classic, the exact original.\r\n"
         "[Display]\r\n"
+        "; 1 = the M map shows Redux's mission map (redux_map, made by Setup): objectives, weapons, tank upgrades, secrets, you.\r\n"
+        "Map=") + (map ? "1" : "0") + "\r\n"
         "; Game resolution, width x height (Redux v1 is made for 1920x1080). Empty = the original Options menu sizes (640x480 etc.).\r\n"
         "Resolution=1920x1080\r\n"
         "; Wide HUD: the top strip and the weapon panel stretched to the screen width. 0 = off.\r\n"
         "WideHUD=1\r\n"
         "[Textures]\r\n"
         "; Folder of high-resolution textures (the asset pack). Empty = the original textures.\r\n"
-        "Pack=") + (pack ? "redux_textures" : "") + "\r\n"
+        "Pack=" + (pack ? "redux_textures" : "") + "\r\n"
         "[Tools]\r\n"
         "; Screenshot key (F1-F24) for problem reports: saves to Pictures\\Recoil Redux Screenshots\\Bug Reports with a .txt of the settings.\r\n"
         "ScreenshotKey=F12\r\n"
@@ -404,9 +407,9 @@ std::string ReduxIniText(bool pack)
         "ShadowFix=1\r\n";
 }
 
-void WriteReduxIni(const std::wstring& dest, bool pack, const Log& log)
+void WriteReduxIni(const std::wstring& dest, bool pack, bool map, const Log& log)
 {
-    const std::string text = ReduxIniText(pack);
+    const std::string text = ReduxIniText(pack, map);
     WriteFileAll(dest + L"\\redux.ini", std::vector<std::uint8_t>(text.begin(), text.end()));
     log(std::string("Redux settings: 1920x1080, wide HUD, ") + (pack ? "asset pack textures" : "original textures") + " (redux.ini)");
 }
@@ -494,7 +497,8 @@ std::wstring Install(const std::wstring& src, const std::wstring& dgv, const std
     InstallDgv(m, dest, log);
     if (esrgan.empty()) esrgan = DefaultEsrgan();
     const bool tex = generate ? GenerateTextures(dest, esrgan, log, progress) > 0 : !pack.empty() && InstallPack(pack, dest, log, progress);
-    WriteReduxIni(dest, tex, log);
+    const bool map = GenerateMaps(dest, log) > 0;
+    WriteReduxIni(dest, tex, map, log);
     const std::wstring target = InstallRemake(payload, dest, log);
     if (shortcut) MakeShortcut(target, log);
     log("done - start Recoil Redux from the desktop shortcut or " + Narrow(target));
@@ -504,7 +508,7 @@ std::wstring Install(const std::wstring& src, const std::wstring& dgv, const std
 // ---------------------------------------------------------------- command line
 int RunCli(int argc, wchar_t** argv)
 {
-    std::wstring src, dgv, dest, payload, pack, esrgan;
+    std::wstring src, dgv, dest, payload, pack, esrgan, maps_only;
     bool shortcut = true, generate = false;
     for (int i = 1; i < argc; ++i) {
         const std::wstring a = argv[i];
@@ -517,6 +521,7 @@ int RunCli(int argc, wchar_t** argv)
         else if (a == L"--generate") generate = true;
         else if (a == L"--esrgan") esrgan = next();
         else if (a == L"--no-shortcut") shortcut = false;
+        else if (a == L"--maps") maps_only = next();
     }
     if (!AttachConsole(ATTACH_PARENT_PROCESS)) AllocConsole();
     HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -525,6 +530,7 @@ int RunCli(int argc, wchar_t** argv)
         const std::string l = s + "\r\n";
         WriteFile(out, l.data(), DWORD(l.size()), &w, nullptr);
     };
+    if (!maps_only.empty()) return GenerateMaps(maps_only, print) > 0 ? 0 : 3;   // test: the maps of an installed copy
     if (src.empty() || dgv.empty() || dest.empty()) {
         print("usage: Setup.exe --source COPY --dgvoodoo ZIP --dest DIR [--pack ZIP | --generate] [--esrgan DIR] [--payload EXE] [--no-shortcut]");
         return 1;

@@ -108,7 +108,7 @@ endif()
 
 # The player Setup (Setup.exe in the players' download, setup/setup_main.cpp): installs the remake from the player's own copy
 # of Recoil. Contains no Recoil bytes; static C runtime so it runs on a bare Windows. PLATFORM, not a mirrored original file.
-add_executable(recoil_setup WIN32 setup/setup_main.cpp setup/source.cpp setup/inflate.cpp setup/upscale.cpp)
+add_executable(recoil_setup WIN32 setup/setup_main.cpp setup/source.cpp setup/inflate.cpp setup/upscale.cpp setup/mapgen.cpp)
 set_target_properties(recoil_setup PROPERTIES OUTPUT_NAME Setup MSVC_RUNTIME_LIBRARY MultiThreaded)
 target_compile_definitions(recoil_setup PRIVATE UNICODE _UNICODE)
 target_link_libraries(recoil_setup PRIVATE comctl32 shell32 ole32 comdlg32 bcrypt uuid)

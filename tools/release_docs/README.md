@@ -61,9 +61,10 @@ installed: no Python, no runtimes. Everything is on one page:
      available when this option is chosen.
 
    Setup shows an example picture of all three.
-4. Click **Install**, then start *Recoil Redux* from the desktop shortcut.
+4. Click **Install**, then start *Recoil Redux* from the desktop shortcut. Setup also makes the mission maps from your
+   copy (about 10 seconds).
 
-## What's in version 1
+## What's in version 1 (1.01: the mission map)
 
 Each feature below lists its `redux.ini` switch.
 
@@ -184,6 +185,28 @@ contains these videos.
 - **What stays the game's own:** timing, skipping, drawing and the AVI's sound.
 - **Windows 11:** this also fixes the cutscenes there. 8 of the 11 original videos are Indeo 5, which Windows 11
   cannot decode.
+
+### Mission map (RX-47, new in 1.01)
+
+```
+[Display]
+Map=1
+```
+
+Press **M** (the game's Map key) in missions 1-6 for a new map, drawn over the game at three quarters of the screen
+and slightly see-through, so the game keeps running behind it:
+
+- **The level from above**, rendered by Setup from your own copy's 3D geometry and textures (`redux_map\m<N>.png`, about
+  10 seconds for all six maps). The game's original map outlines show faintly on top.
+- **Mission objectives**, numbered and named, at the places the game's own tour points mark for them. A marker
+  disappears once its objective is complete (the objective flags at `0x004f11fc`).
+- **Weapons** (orange diamonds) and **tank upgrades** (blue hexagons), shown from the start so none is missed, read live
+  from the game's pickup list (`0x004f3318`): a collected pickup disappears.
+- **Secrets** (purple star) named by the mission scripts.
+- **You**: a white arrow at your tank's position, pointing where you are heading.
+
+Redux draws it only while the game's map is open (map object `0x004f0cc0` `+0x68`) and closes it for the pause menu;
+nothing runs while the map is closed.
 
 ### Launcher and settings
 

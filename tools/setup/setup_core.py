@@ -166,10 +166,12 @@ def install_remake(payload, dest, log):
     return target
 
 
-def redux_ini_text(pack):
-    """Recoil Redux v1 settings (same bytes as setup_main.cpp ReduxIniText)"""
+def redux_ini_text(pack, map_=False):
+    """Recoil Redux v1 settings (same bytes as setup_main.cpp ReduxIniText; the maps are made only by the C++ Setup)"""
     return ('; Recoil Redux settings, written by Setup. Delete this file (or empty the values) to play Recoil Classic, the exact original.\r\n'
             '[Display]\r\n'
+            '; 1 = the M map shows Redux\'s mission map (redux_map, made by Setup): objectives, weapons, tank upgrades, secrets, you.\r\n'
+            'Map=' + ('1' if map_ else '0') + '\r\n'
             '; Game resolution, width x height (Redux v1 is made for 1920x1080). Empty = the original Options menu sizes (640x480 etc.).\r\n'
             'Resolution=1920x1080\r\n'
             '; Wide HUD: the top strip and the weapon panel stretched to the screen width. 0 = off.\r\n'

@@ -192,6 +192,8 @@ original.
 * Smooth textures at a distance (mipmaps: no shimmer) and vehicle shadows that no longer vanish when enemies fire.
 * Graphics options start at the top tier with the lighting option off; settings you change are kept for next time.
 * A simpler start-up menu (single player only).
+* A new mission map (M): a top-down view of the level, made by Setup from your own copy, with the objectives, the
+  weapon pickups, the tank upgrades, secrets and your position. Collected pickups and completed objectives disappear.
 * Problem reports: F12 saves a screenshot and pauses for a note about it; hold F11 for a burst of screenshots.
   They are saved in Pictures\\Recoil Redux Screenshots\\Bug Reports.
   For a texture problem, aim the reticle at it before F12: the .txt then names the textures under the reticle.

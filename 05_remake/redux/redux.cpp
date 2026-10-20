@@ -24,6 +24,7 @@
 #include "unattributed/poly_shade.h"
 #include "platform/advapi.h"
 #include "GameZRecoil/zInput/zin_kbd.h"
+#include "Battlesport/map.h"
 
 #include <algorithm>
 #include <cctype>
@@ -704,10 +705,290 @@ void ProbeWriteResult()
     g_probe_result.clear();
 }
 
+// ------------------------------------------------------------------------------------------------ RX-47 mission map
+// [Display] Map=1 (user 2026-10-20: "give the in-game map a redo, higher quality, with the weapon pickups and tank
+// upgrades and mission objectives"; pickups shown from the start, collected ones disappear; the player's position).
+// redux_map\m<N>.png is a top-down render of map N (made from the player's own copy: terrain, the original outlines,
+// numbered objectives, secrets and a legend); m<N>.txt gives its map area size and world bounds - image x =
+// (z - z0) * ppu, image y = (x1 - x) * ppu (world +x up, +z right, the game's own orientation, MapScreen_WorldToMap
+// 0x00416c90). While the game's map is open (the Map command 0x1b of Mission_HandleCommand 0x00417ca0 toggles
+// MapScreen_PushVisible; open = map object 0x004f0cc0 +0x68, set by MapScreen_BeginZoomToFit 0x00416a30) during play
+// ([0x004f36b0] = 1, set by Game_HandleStateEvent 0x0042bb30 event 15; MEASURED 2026-10-20 RX-47 log: 1 while driving
+// in mission 1, 0 before play starts; that it is 0 in the Escape menu is not yet checked), Redux draws at
+// each flip, over the frame: the picture fitted to the screen, then every pickup still in the live list (head
+// [0x004f331c], next +0x50, position +0xC, type entry +4 with its id at +8 - pickup.md, CONFIRMED-BINARY) that is a
+// weapon (ids 0x11-0x21) or a tank upgrade (0x25-0x27), then the tank (V = [[0x004f36a8]+4], position +0x3EC, forward
+// vector +0x580: the map focus heading of MapScreen_SetFocusEntity 0x00417220). No cost while the map is closed.
+bool g_map_on = false;
+int g_map_mission = -1;                     // whose picture is loaded (-1 none tried)
+int g_map_w = 0, g_map_h = 0;               // the picture
+int g_map_area_w = 0, g_map_area_h = 0;     // its map part (the legend is to the right)
+double g_map_x0 = 0, g_map_z0 = 0, g_map_x1 = 0, g_map_z1 = 0, g_map_ppu = 1;
+std::vector<unsigned char> g_map_bgra;
+struct MapObjective { int n; double x, y; };   // number and marker position in the picture
+std::vector<MapObjective> g_map_objectives;
+// user 2026-10-20: "not full screen and slightly transparent as the game continues to run in the background"
+constexpr double kMapFill = 0.75;           // INVENTED (user preference, not from Recoil): share of the screen
+constexpr int kMapAlpha = 190;              // INVENTED (user preference): opacity out of 256 (about 75 %)
+HDC g_map_dc = nullptr, g_map_tmp_dc = nullptr;   // the picture scaled for the screen; the frame area being composed
+HBITMAP g_map_bmp = nullptr, g_map_tmp_bmp = nullptr;
+HGDIOBJ g_map_old = nullptr, g_map_tmp_old = nullptr;
+unsigned char* g_map_bits = nullptr;
+unsigned char* g_map_tmp_bits = nullptr;
+int g_map_sw = 0, g_map_sh = 0, g_map_ox = 0, g_map_oy = 0, g_map_dw = 0, g_map_dh = 0;
+double g_map_scale = 1;
+
+void MapFreeScaled()
+{
+    if (g_map_dc) {
+        SelectObject(g_map_dc, g_map_old);
+        DeleteObject(g_map_bmp);
+        DeleteDC(g_map_dc);
+        SelectObject(g_map_tmp_dc, g_map_tmp_old);
+        DeleteObject(g_map_tmp_bmp);
+        DeleteDC(g_map_tmp_dc);
+        g_map_dc = g_map_tmp_dc = nullptr;
+        g_map_bmp = g_map_tmp_bmp = nullptr;
+    }
+}
+
+bool MapLoad(int mission)
+{
+    g_map_mission = mission;
+    g_map_bgra.clear();
+    MapFreeScaled();
+    char path[MAX_PATH];
+    std::snprintf(path, sizeof path, "redux_map\\m%d.txt", mission);
+    FILE* f = std::fopen(path, "r");
+    if (!f) return false;
+    const int got = std::fscanf(f, "%d %d %lf %lf %lf %lf %lf", &g_map_area_w, &g_map_area_h, &g_map_x0, &g_map_z0, &g_map_x1,
+                                &g_map_z1, &g_map_ppu);
+    g_map_objectives.clear();
+    MapObjective o{};
+    while (std::fscanf(f, " obj %d %lf %lf", &o.n, &o.x, &o.y) == 3)
+        if (o.n >= 1 && o.x >= 0) g_map_objectives.push_back(o);
+    std::fclose(f);
+    std::snprintf(path, sizeof path, "redux_map\\m%d.png", mission);
+    std::vector<unsigned char> rgba;
+    if (got != 7 || g_map_ppu <= 0 || !LoadPng(path, g_map_w, g_map_h, rgba)) return false;
+    g_map_bgra.resize(rgba.size());
+    for (std::size_t i = 0; i < rgba.size(); i += 4) {
+        g_map_bgra[i] = rgba[i + 2];
+        g_map_bgra[i + 1] = rgba[i + 1];
+        g_map_bgra[i + 2] = rgba[i];
+        g_map_bgra[i + 3] = 255;
+    }
+    std::fprintf(stderr, "redux: RX-47 map %d loaded (%dx%d)\n", mission, g_map_w, g_map_h);
+    return true;
+}
+
+HDC MapDib(int w, int h, HBITMAP& bmp, HGDIOBJ& old, unsigned char*& bits)
+{
+    BITMAPINFO bi{};
+    bi.bmiHeader.biSize = sizeof bi.bmiHeader;
+    bi.bmiHeader.biWidth = w;
+    bi.bmiHeader.biHeight = -h;
+    bi.bmiHeader.biPlanes = 1;
+    bi.bmiHeader.biBitCount = 32;
+    void* p = nullptr;
+    HDC dc = CreateCompatibleDC(nullptr);
+    bmp = CreateDIBSection(nullptr, &bi, DIB_RGB_COLORS, &p, nullptr, 0);
+    old = SelectObject(dc, bmp);
+    bits = static_cast<unsigned char*>(p);
+    return dc;
+}
+
+void MapScaleTo(int w, int h)
+{
+    MapFreeScaled();
+    g_map_sw = w;
+    g_map_sh = h;
+    g_map_scale = (std::min)(w * kMapFill / g_map_w, h * kMapFill / g_map_h);
+    g_map_dw = (std::max)(1, int(g_map_w * g_map_scale));
+    g_map_dh = (std::max)(1, int(g_map_h * g_map_scale));
+    g_map_ox = (w - g_map_dw) / 2;
+    g_map_oy = (h - g_map_dh) / 2;
+    g_map_dc = MapDib(g_map_dw, g_map_dh, g_map_bmp, g_map_old, g_map_bits);
+    g_map_tmp_dc = MapDib(g_map_dw, g_map_dh, g_map_tmp_bmp, g_map_tmp_old, g_map_tmp_bits);
+    BITMAPINFO src{};
+    src.bmiHeader.biSize = sizeof src.bmiHeader;
+    src.bmiHeader.biWidth = g_map_w;
+    src.bmiHeader.biHeight = -g_map_h;
+    src.bmiHeader.biPlanes = 1;
+    src.bmiHeader.biBitCount = 32;
+    SetStretchBltMode(g_map_dc, HALFTONE);
+    SetBrushOrgEx(g_map_dc, 0, 0, nullptr);
+    StretchDIBits(g_map_dc, 0, 0, g_map_dw, g_map_dh, 0, 0, g_map_w, g_map_h, g_map_bgra.data(), &src, DIB_RGB_COLORS, SRCCOPY);
+    GdiFlush();
+}
+
+POINT MapPoint(double x, double z)   // in the composed area (0, 0 = the picture's top-left)
+{
+    return {int((z - g_map_z0) * g_map_ppu * g_map_scale), int((g_map_x1 - x) * g_map_ppu * g_map_scale)};
+}
+
+void MapDraw(HDC screen, int w, int h)
+{
+    if (w != g_map_sw || h != g_map_sh || !g_map_dc) MapScaleTo(w, h);
+    // the frame under the map, blended with the picture, then the live markers, then back in one copy
+    BitBlt(g_map_tmp_dc, 0, 0, g_map_dw, g_map_dh, screen, g_map_ox, g_map_oy, SRCCOPY);
+    GdiFlush();
+    const std::size_t bytes = std::size_t(g_map_dw) * g_map_dh * 4;
+    for (std::size_t i = 0; i < bytes; ++i)
+        g_map_tmp_bits[i] = static_cast<unsigned char>((g_map_bits[i] * kMapAlpha + g_map_tmp_bits[i] * (256 - kMapAlpha)) >> 8);
+    HDC dc = g_map_tmp_dc;
+    const int s = (std::max)(4, int(9 * g_map_scale * 1.6));   // icon size, as the legend's at this scale
+    HPEN black = CreatePen(PS_SOLID, 1, RGB(0, 0, 0)), white = CreatePen(PS_SOLID, 2, RGB(255, 255, 255));
+    HBRUSH weapon = CreateSolidBrush(RGB(255, 150, 30)), upgrade = CreateSolidBrush(RGB(60, 200, 255)),
+           you = CreateSolidBrush(RGB(255, 255, 255));
+    HGDIOBJ op = SelectObject(dc, black), ob = SelectObject(dc, weapon);
+    HRGN clip = CreateRectRgn(0, 0, int(g_map_area_w * g_map_scale), int(g_map_area_h * g_map_scale));
+    SelectClipRgn(dc, clip);
+    // objectives still to do: mission object 0x004f0cc0, count +0x12c, objective i's done flag at +0x53c + i * 0x31c
+    // (objective_triggers.md, VERIFIED-ORACLE; slot i is OBJECTIVE<i+1>, Mission_LoadObjectiveTriggers 0x00418230)
+    {
+        HBRUSH red = CreateSolidBrush(RGB(255, 60, 60));
+        HPEN ring = CreatePen(PS_SOLID, (std::max)(2, s / 4), RGB(255, 255, 255));
+        HFONT num = CreateFontA(-int(s * 1.6), 0, 0, 0, FW_BOLD, 0, 0, 0, ANSI_CHARSET, 0, 0, ANTIALIASED_QUALITY, 0, "Arial");
+        HGDIOBJ of = SelectObject(dc, num);
+        SetBkMode(dc, TRANSPARENT);
+        SetTextColor(dc, RGB(255, 255, 255));
+        const int count = int(Data(0x16dec));
+        for (const MapObjective& o : g_map_objectives) {
+            const int i = o.n - 1;
+            if (i < count && Data(0x171fc + i * 0x31c)) continue;   // done: the marker goes
+            const int x = int(o.x * g_map_scale), y = int(o.y * g_map_scale), r = int(s * 1.3);
+            SelectObject(dc, red);
+            SelectObject(dc, ring);
+            Ellipse(dc, x - r, y - r, x + r, y + r);
+            char t[8];
+            std::snprintf(t, sizeof t, "%d", o.n);
+            RECT tr{x - r, y - r, x + r, y + r};
+            DrawTextA(dc, t, -1, &tr, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+        }
+        SelectObject(dc, of);
+        SelectObject(dc, black);
+        DeleteObject(num);
+        DeleteObject(ring);
+        DeleteObject(red);
+    }
+    std::uint32_t node = Data(0x1931c);   // [0x004f331c] live pickups
+    for (int guard = 0; node && guard < 4096; ++guard) {
+        const auto* n = reinterpret_cast<const unsigned char*>(static_cast<std::uintptr_t>(node));
+        if (IsBadReadPtr(n, 0x54)) break;
+        const auto* entry = reinterpret_cast<const unsigned char*>(static_cast<std::uintptr_t>(*reinterpret_cast<const std::uint32_t*>(n + 4)));
+        const std::uint32_t id = entry && !IsBadReadPtr(entry, 0xc) ? *reinterpret_cast<const std::uint32_t*>(entry + 8) : 0;
+        const float* p = reinterpret_cast<const float*>(n + 0xc);
+        const POINT c = MapPoint(p[0], p[2]);
+        if (id >= 0x11 && id <= 0x21) {   // weapons: orange diamond
+            SelectObject(dc, weapon);
+            SelectObject(dc, black);
+            POINT d[4] = {{c.x, c.y - s}, {c.x + s, c.y}, {c.x, c.y + s}, {c.x - s, c.y}};
+            Polygon(dc, d, 4);
+        } else if (id >= 0x25 && id <= 0x27) {   // tank upgrades: blue hexagon
+            SelectObject(dc, upgrade);
+            SelectObject(dc, white);
+            POINT hx[6];
+            for (int i = 0; i < 6; ++i)
+                hx[i] = {c.x + int(s * 1.15 * std::cos(3.14159265 / 3 * i)), c.y + int(s * 1.15 * std::sin(3.14159265 / 3 * i))};
+            Polygon(dc, hx, 6);
+        }
+        node = *reinterpret_cast<const std::uint32_t*>(n + 0x50);
+    }
+    const std::uint32_t holder = Data(0x196a8);   // [0x004f36a8]
+    const auto* hv = holder && !IsBadReadPtr(reinterpret_cast<void*>(static_cast<std::uintptr_t>(holder)), 8)
+                         ? reinterpret_cast<const unsigned char*>(static_cast<std::uintptr_t>(*reinterpret_cast<const std::uint32_t*>(
+                               static_cast<std::uintptr_t>(holder) + 4)))
+                         : nullptr;
+    if (hv && !IsBadReadPtr(hv, 0x590)) {
+        const float* p = reinterpret_cast<const float*>(hv + 0x3ec);
+        const float* fwd = reinterpret_cast<const float*>(hv + 0x580);
+        double fx = fwd[0], fz = fwd[2];
+        const double len = std::sqrt(fx * fx + fz * fz);
+        if (len > 1e-6) { fx /= len; fz /= len; } else { fx = 1; fz = 0; }
+        const POINT c = MapPoint(p[0], p[2]);
+        const double ux = fz, uy = -fx;           // forward on screen (+x up, +z right)
+        const double vx = -uy, vy = ux;           // its right
+        const double L = s * 2.2, W = s * 1.3;
+        POINT a[4] = {{c.x + int(ux * L), c.y + int(uy * L)}, {c.x - int(ux * L * 0.7 - vx * W), c.y - int(uy * L * 0.7 - vy * W)},
+                      {c.x - int(ux * L * 0.3), c.y - int(uy * L * 0.3)}, {c.x - int(ux * L * 0.7 + vx * W), c.y - int(uy * L * 0.7 + vy * W)}};
+        HPEN thick = CreatePen(PS_SOLID, (std::max)(2, s / 3), RGB(0, 0, 0));
+        SelectObject(dc, thick);
+        SelectObject(dc, you);
+        Polygon(dc, a, 4);
+        SelectObject(dc, black);
+        DeleteObject(thick);
+    }
+    SelectClipRgn(dc, nullptr);
+    DeleteObject(clip);
+    SelectObject(dc, op);
+    SelectObject(dc, ob);
+    DeleteObject(black);
+    DeleteObject(white);
+    DeleteObject(weapon);
+    DeleteObject(upgrade);
+    DeleteObject(you);
+    GdiFlush();
+    BitBlt(screen, g_map_ox, g_map_oy, g_map_dw, g_map_dh, dc, 0, 0, SRCCOPY);
+}
+
+// at a flip: the map over the frame while it is open
+void MapStep(bool copy)
+{
+    if (!g_map_on || g_note_stage != 0) return;
+    static DWORD last_log = 0;
+    static std::uint32_t last_state = 0xffffffff;
+    const std::uint32_t state = Data(0x16d28) | Data(0x16d30) << 8 | Data(0x196b0) << 16 | Data(0x16c98) << 24;
+    if (state != last_state || GetTickCount() - last_log > 5000) {   // diagnostic while RX-47 is unverified
+        std::fprintf(stderr, "redux: RX-47 state open+68=%u anim+70=%u menu=%u pushcount=%u mission=%d\n", Data(0x16d28), Data(0x16d30),
+                     Data(0x196b0), Data(0x16c98), g_mission);
+        std::fflush(stderr);
+        last_state = state;
+        last_log = GetTickCount();
+    }
+    if (!Data(0x16d28) || !Data(0x196b0)) return;   // map +0x68 open; [0x004f36b0] playing
+    // the Escape menu leaves [0x004f36b0] at 1 (RX-47 log): draw only while the game clock [0x0056b430] (Pickup respawn
+    // time base, pickup.md) moves - it stands still in the pause menu
+    static std::uint32_t last_clock = 0;
+    static int still = 0;
+    const std::uint32_t clock = Data(0x91430);
+    still = clock == last_clock ? still + 1 : 0;
+    last_clock = clock;
+    if (still >= 3) {
+        // the pause menu came up with the map open: close it with the game's own Map command step
+        // (MapScreen_PushVisible 0x00416b30 with 0, as Mission_HandleCommand 0x00417ca0 does), because after the menu the
+        // Map key no longer closed it (user 2026-10-20; RX-47 log: +0x68 stayed 1 with push count 1)
+        MapScreen_PushVisible(static_cast<int>(reinterpret_cast<std::uintptr_t>(&Data(0x16cc0))), 0, 0);
+        std::fprintf(stderr, "redux: RX-47 map closed for the pause menu\n");
+        return;
+    }
+    if (g_mission != g_map_mission) MapLoad(g_mission);
+    if (g_map_bgra.empty()) return;
+    // zVideo_FlipFrame (render.md) copies [0x0063223c] into the back buffer [0x0063221c] only when its copy flag (stack
+    // arg 2) is set - the 2D screens; in play the 3D device draws straight into the back buffer (Render_CreateD3DDevice
+    // 0x004a9c20 creates it on [0x0063221c]), so the map goes where the frame is
+    void* rt = reinterpret_cast<void*>(static_cast<std::uintptr_t>(Data(copy ? 0x15823c : 0x15821c)));
+    if (!rt) return;
+    using GetDcFn = long(__stdcall*)(void*, HDC*);
+    using RelDcFn = long(__stdcall*)(void*, HDC);
+    using GetDescFn = long(__stdcall*)(void*, void*);
+    unsigned char desc[0x6c] = {};
+    *reinterpret_cast<std::uint32_t*>(desc) = 0x6c;
+    if (reinterpret_cast<GetDescFn>((*reinterpret_cast<void***>(rt))[22])(rt, desc) != 0) return;   // GetSurfaceDesc +0x58
+    const int h = *reinterpret_cast<std::int32_t*>(desc + 8), w = *reinterpret_cast<std::int32_t*>(desc + 0xc);
+    HDC dc = nullptr;
+    if (w <= 0 || h <= 0 || reinterpret_cast<GetDcFn>((*reinterpret_cast<void***>(rt))[17])(rt, &dc) != 0) return;   // GetDC +0x44
+    MapDraw(dc, w, h);
+    static int drawn = 0;
+    if (drawn++ == 0) std::fprintf(stderr, "redux: RX-47 map drawn on the %s surface %dx%d\n", copy ? "2D" : "back", w, h);
+    reinterpret_cast<RelDcFn>((*reinterpret_cast<void***>(rt))[26])(rt, dc);   // ReleaseDC +0x68
+}
+
 int __fastcall FlipWithNote(int ecx, int edx, int a, int b)
 {
     ProbeStep();
     ProbeWriteResult();
+    MapStep(b != 0);
     if (g_note_stage == 2 || g_restore_left > 0) {
         void* rt = reinterpret_cast<void*>(static_cast<std::uintptr_t>(Data(0x15823c)));   // [0x0063223c] render target
         using GetDcFn = long(__stdcall*)(void*, HDC*);
@@ -777,24 +1058,52 @@ void StartNote()
     g_note_stage = 1;
 }
 
-bool InitScreenshotNote()
+// the zVideo_FlipFrame 0x004a9b70 trampoline shared by RX-38 / RX-46 / RX-47 (its first 7 bytes copied)
+bool InstallFlipHook()
 {
-    if (GetPrivateProfileIntA("Tools", "ScreenshotNote", 0, kIni) != 1 || !g_shot_vk) return false;
+    if (g_flip) return true;
     const unsigned char* p = reinterpret_cast<const unsigned char*>(&zVideo_FlipFrame);
-    const unsigned char* k = reinterpret_cast<const unsigned char*>(&Input_Keyboard_PollAndTranslate);
-    if (p[0] != 0xA1 || p[5] != 0x53 || p[6] != 0x55 ||                 // MOV EAX,[abs] / PUSH EBX / PUSH EBP
-        k[0] != 0x83 || k[1] != 0xEC || k[2] != 0x08 || k[3] != 0xA1) {   // SUB ESP,8 / MOV EAX,[abs]
-        std::fprintf(stderr, "redux: RX-38 screenshot note not installed (unexpected code)\n");
-        return false;
-    }
+    if (p[0] != 0xA1 || p[5] != 0x53 || p[6] != 0x55) return false;   // MOV EAX,[abs] / PUSH EBX / PUSH EBP
     if (!(g_flip = reinterpret_cast<FlipFn>(Trampoline(const_cast<unsigned char*>(p), p, 7))) ||
-        !(g_kb_poll = reinterpret_cast<KbFn>(Trampoline(const_cast<unsigned char*>(k), k, 8))) ||
-        !Hook(const_cast<unsigned char*>(p), reinterpret_cast<void*>(&FlipWithNote), "zVideo_FlipFrame") ||
-        !Hook(const_cast<unsigned char*>(k), reinterpret_cast<void*>(&KbPollWithNote), "Input_Keyboard_PollAndTranslate")) {
+        !Hook(const_cast<unsigned char*>(p), reinterpret_cast<void*>(&FlipWithNote), "zVideo_FlipFrame")) {
         g_flip = nullptr;
         return false;
     }
+    return true;
+}
+
+bool InitScreenshotNote()
+{
+    if (GetPrivateProfileIntA("Tools", "ScreenshotNote", 0, kIni) != 1 || !g_shot_vk) return false;
+    const unsigned char* k = reinterpret_cast<const unsigned char*>(&Input_Keyboard_PollAndTranslate);
+    if (k[0] != 0x83 || k[1] != 0xEC || k[2] != 0x08 || k[3] != 0xA1) {   // SUB ESP,8 / MOV EAX,[abs]
+        std::fprintf(stderr, "redux: RX-38 screenshot note not installed (unexpected code)\n");
+        return false;
+    }
+    if (!InstallFlipHook() ||
+        !(g_kb_poll = reinterpret_cast<KbFn>(Trampoline(const_cast<unsigned char*>(k), k, 8))) ||
+        !Hook(const_cast<unsigned char*>(k), reinterpret_cast<void*>(&KbPollWithNote), "Input_Keyboard_PollAndTranslate")) {
+        std::fprintf(stderr, "redux: RX-38 screenshot note not installed\n");
+        return false;
+    }
     std::fprintf(stderr, "redux: RX-38 screenshot key pauses (Escape) for a note\n");
+    return true;
+}
+
+bool InitMap()
+{
+    if (GetPrivateProfileIntA("Display", "Map", 0, kIni) != 1) return false;
+    const DWORD a = GetFileAttributesA("redux_map");
+    if (a == INVALID_FILE_ATTRIBUTES || !(a & FILE_ATTRIBUTE_DIRECTORY)) {
+        std::fprintf(stderr, "redux: RX-47 map not installed (no redux_map folder)\n");
+        return false;
+    }
+    if (!InstallFlipHook()) {
+        std::fprintf(stderr, "redux: RX-47 map not installed (unexpected code)\n");
+        return false;
+    }
+    g_map_on = true;
+    std::fprintf(stderr, "redux: RX-47 mission map (redux_map)\n");
     return true;
 }
 
@@ -1425,6 +1734,7 @@ int Init()
     n += InitTexturePack();
     n += InitScreenshotKey();
     n += InitScreenshotNote();
+    n += InitMap();
     n += InitMaxDetail();
     n += InitMipmaps();
     n += InitShadowLog();
