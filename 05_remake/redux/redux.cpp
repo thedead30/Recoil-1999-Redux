@@ -212,6 +212,7 @@ void Widen(unsigned char* img, const WidePlan& p)
 // while mission N is loaded (g_mission).
 char g_pack_dir[MAX_PATH] = {};
 bool g_pack_on = false;
+bool InstallMissionHook();   // below
 int g_mission = 0;   // the mission whose data is loaded: ECX of Mission_SetDataSearchPaths 0x0042ecb0 (CONFIRMED-BINARY: zbd\m%d)
 bool g_wide_on = false;
 bool g_image_hooked = false;
@@ -1080,7 +1081,7 @@ bool InitScreenshotNote()
         std::fprintf(stderr, "redux: RX-38 screenshot note not installed (unexpected code)\n");
         return false;
     }
-    if (!InstallFlipHook() ||
+    if (!InstallFlipHook() || !InstallMissionHook() ||
         !(g_kb_poll = reinterpret_cast<KbFn>(Trampoline(const_cast<unsigned char*>(k), k, 8))) ||
         !Hook(const_cast<unsigned char*>(k), reinterpret_cast<void*>(&KbPollWithNote), "Input_Keyboard_PollAndTranslate")) {
         std::fprintf(stderr, "redux: RX-38 screenshot note not installed\n");
@@ -1098,7 +1099,7 @@ bool InitMap()
         std::fprintf(stderr, "redux: RX-47 map not installed (no redux_map folder)\n");
         return false;
     }
-    if (!InstallFlipHook()) {
+    if (!InstallFlipHook() || !InstallMissionHook()) {
         std::fprintf(stderr, "redux: RX-47 map not installed (unexpected code)\n");
         return false;
     }
@@ -1278,6 +1279,21 @@ int __fastcall MissionPaths(int mission, int edx)
     return g_mission_paths(mission, edx);
 }
 
+// every feature that needs the mission number installs this (once); it was only installed with a texture pack, so
+// without one the RX-47 map and the RX-38 note never knew the mission (found 2026-10-24)
+bool InstallMissionHook()
+{
+    if (g_mission_paths) return true;
+    const unsigned char head[] = {0x81, 0xEC, 0x00, 0x01, 0x00, 0x00, 0x56};   // SUB ESP,0x100 / PUSH ESI
+    void* target = reinterpret_cast<void*>(&Mission_SetDataSearchPaths);
+    if ((g_mission_paths = reinterpret_cast<MissionPathsFn>(Trampoline(target, head, sizeof head))) != nullptr &&
+        Hook(target, reinterpret_cast<void*>(&MissionPaths), "Mission_SetDataSearchPaths"))
+        return true;
+    g_mission_paths = nullptr;
+    std::fprintf(stderr, "redux: mission number unknown (unexpected code at Mission_SetDataSearchPaths)\n");
+    return false;
+}
+
 bool InitTexturePack()
 {
     char dir[MAX_PATH] = {};
@@ -1291,10 +1307,7 @@ bool InitTexturePack()
     }
     g_pack_on = HookImageLoad();
     if (g_pack_on) std::fprintf(stderr, "redux: RX-10 texture pack %s\n", g_pack_dir);
-    const unsigned char head[] = {0x81, 0xEC, 0x00, 0x01, 0x00, 0x00, 0x56};
-    void* target = reinterpret_cast<void*>(&Mission_SetDataSearchPaths);
-    if (g_pack_on && (g_mission_paths = reinterpret_cast<MissionPathsFn>(Trampoline(target, head, sizeof head))) != nullptr &&
-        Hook(target, reinterpret_cast<void*>(&MissionPaths), "Mission_SetDataSearchPaths"))
+    if (g_pack_on && InstallMissionHook())
         std::fprintf(stderr, "redux: RX-10 per-mission pack folders (m<N>)\n");
     else if (g_pack_on)
         std::fprintf(stderr, "redux: RX-10 per-mission folders off (unexpected code at Mission_SetDataSearchPaths)\n");

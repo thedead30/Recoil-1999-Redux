@@ -421,3 +421,4 @@ when,commit,model,item,summary,files
 2026-10-20 21:49,6dd3c9a1bb,opus,,"Setup mapgen.cpp (RX-47 maps from the player's copy, no Python), v1.01 docs",03_re/ledger/redux_backlog.csv;05_remake/CMakeLists.txt;05_remake/setup/mapgen.cpp;05_remake/setup/mapgen.h;05_remake/setup/setup_main.cpp;05_remake/setup/upscale.cpp;05_remake/setup/zbdimg.h;tools/make_release.py;tools/release_docs/README.md;tools/setup/setup_core.py
 2026-10-20 21:51,d3427a6b27,opus,,"Redux v1.01 published to Recoil-1999-Redux (release v1.01: Player + Source zips; mission map, Setup map generator)",03_re/ledger/work_log.csv
 2026-10-20 21:58,f713cbba3c,opus,,Setup upgrade / clean install (v1.02); CLI-tested both paths; task dialog not seen on screen,05_remake/setup/setup_main.cpp;tools/release_docs/README.md
+2026-10-20 22:00,01f3021ccf,opus,,Redux v1.02 published (upgrade / clean install),03_re/ledger/work_log.csv

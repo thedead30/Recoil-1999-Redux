@@ -480,7 +480,7 @@ bool RunFromZip()
 
 // ---------------------------------------------------------------- an existing install: upgrade or clean install
 // (user 2026-10-20: "upgrade keeps screenshots and save games; clean install is full clean")
-const char kReduxVersion[] = "1.02";            // written to redux_version.txt by this Setup
+const char kReduxVersion[] = "1.03";            // written to redux_version.txt by this Setup
 const wchar_t kVersionFile[] = L"redux_version.txt";
 
 bool IsReduxInstall(const std::wstring& dir)
